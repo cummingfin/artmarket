@@ -30,6 +30,10 @@ export default function ArtistDashboard() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user || !imageFile) return;
 
+    console.log('User:', user);
+    const sessionResult = await supabase.auth.getSession();
+    console.log('Session:', sessionResult.data.session);
+
     const fileExt = imageFile.name.split('.').pop();
     const filePath = `artworks/${Date.now()}.${fileExt}`;
 
