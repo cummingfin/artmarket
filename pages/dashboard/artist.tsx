@@ -1,10 +1,8 @@
 // pages/dashboard/artist.tsx
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import { supabase } from '@/lib/supabaseClient';
+import { useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function ArtistDashboard() {
-  const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');

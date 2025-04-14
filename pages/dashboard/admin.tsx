@@ -2,8 +2,17 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
+type Artwork = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  image_url: string;
+  style?: string;
+};
+
 export default function AdminDashboard() {
-  const [artworks, setArtworks] = useState<any[]>([]);
+  const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [message, setMessage] = useState('');
 
   useEffect(() => {

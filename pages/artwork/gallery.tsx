@@ -2,9 +2,18 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
+type Artwork = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  image_url: string;
+  style?: string;
+};
+
 export default function Gallery() {
-  const [artworks, setArtworks] = useState<any[]>([]);
-  const [filtered, setFiltered] = useState<any[]>([]);
+  const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [filtered, setFiltered] = useState<Artwork[]>([]);
   const [priceFilter, setPriceFilter] = useState('all');
   const [styleFilter, setStyleFilter] = useState('all');
 
