@@ -14,10 +14,10 @@ export default function Login() {
     e.preventDefault();
     setError('');
 
-    const { data, error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
     if (loginError) {
       setError(loginError.message);
@@ -59,12 +59,12 @@ export default function Login() {
         </form>
 
         <div className="text-center">
-          <p className="text-sm">
-            Don't have an account?{' '}
-            <Link href="/auth/register" className="text-blue-600 hover:underline">
-              Sign up instead
-            </Link>
-          </p>
+            <p className="text-sm">
+                {"Don't have an account? "}
+                <Link href="/auth/register" className="text-blue-600 hover:underline">
+                    Sign up instead
+                </Link>
+            </p>
         </div>
       </div>
     </div>
