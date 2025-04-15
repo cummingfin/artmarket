@@ -100,7 +100,7 @@ export default function Gallery() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {filtered.map((art) => (
               <div key={art.id} className="border p-4 rounded">
-              {/* ✅ Only the image links to the artwork detail page */}
+              {/* ✅ Image links to the artwork page */}
               <Link href={`/artwork/${art.id}`}>
                 <div className="w-full aspect-square overflow-hidden mb-4 border cursor-pointer">
                   <img
@@ -114,7 +114,7 @@ export default function Gallery() {
               <h2 className="text-xl font-semibold mb-1">{art.title}</h2>
               <p className="text-sm text-gray-700 mb-1">{art.description}</p>
             
-              {/* ✅ Artist profile link (not the whole card!) */}
+              {/* ✅ Simple text link to profile */}
               {art.profiles?.email && (
                 <p className="text-sm text-gray-500 mb-1">
                   by{' '}
@@ -133,7 +133,8 @@ export default function Gallery() {
               >
                 Buy Now
               </button>
-            </div>                                  
+            </div>
+                                            
             ))}
           </div>
         )}
