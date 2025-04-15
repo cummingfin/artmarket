@@ -98,11 +98,13 @@ export default function Gallery() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {filtered.map((art) => (
               <div key={art.id} className="border p-4 rounded">
-                <img
-                  src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
-                  alt={art.title}
-                  className="w-full h-auto mb-4 border"
-                />
+                <div className="w-full aspect-square overflow-hidden mb-4 border">
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
+                      alt={art.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 <Link href={`/artwork/${art.id}`}>
                   <h2 className="text-xl font-semibold mb-1 hover:underline cursor-pointer">
                     {art.title}
