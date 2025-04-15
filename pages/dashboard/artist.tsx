@@ -27,22 +27,38 @@ export default function ArtistDashboard() {
     e.preventDefault();
     setMessage('');
 
-    const user = (await supabase.auth.getUser()).data.user;
-    if (!user || !imageFile) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const session = await supabase.auth.getSession();
 
     console.log('User:', user);
-    const sessionResult = await supabase.auth.getSession();
-    console.log('Session:', sessionResult.data.session);
+    console.log('Session:', session.data.session);
+
+    if (!user) {
+      setMessage('User not logged in');
+      return;
+    }
+
+    if (!imageFile) {
+      setMessage('Please select an image file.');
+      return;
+    }
 
     const fileExt = imageFile.name.split('.').pop();
-    const filePath = `artworks/${Date.now()}.${fileExt}`;
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = fileName;
+
+    console.log('Uploading to:', filePath);
+    console.log('File type:', imageFile.type);
+    console.log('File name:', imageFile.name);
+    console.log('File object:', imageFile);
 
     const { data: storageData, error: storageError } = await supabase.storage
-      .from('artwork')
+      .from('artwork') // Ensure this matches your Supabase bucket
       .upload(filePath, imageFile);
 
     if (storageError) {
-      setMessage(storageError.message);
+      console.error('Storage Upload Error:', storageError);
+      setMessage(`Upload failed: ${storageError.message}`);
       return;
     }
 
@@ -61,7 +77,8 @@ export default function ArtistDashboard() {
       ]);
 
     if (insertError) {
-      setMessage(insertError.message);
+      console.error('Insert Error:', insertError);
+      setMessage(`Insert failed: ${insertError.message}`);
     } else {
       setMessage('Artwork submitted for review!');
       setTitle('');
