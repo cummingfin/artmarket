@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar'; // 👈 Make sure the path matches your folder structure
+import Link from 'next/link';
 
 type Artwork = {
   id: string;
@@ -102,7 +103,11 @@ export default function Gallery() {
                   alt={art.title}
                   className="w-full h-auto mb-4 border"
                 />
-                <h2 className="text-xl font-semibold mb-1">{art.title}</h2>
+                <Link href={`/artwork/${art.id}`}>
+                  <h2 className="text-xl font-semibold mb-1 hover:underline cursor-pointer">
+                    {art.title}
+                  </h2>
+                </Link>
                 <p className="text-sm text-gray-700 mb-2">{art.description}</p>
                 <p className="text-sm font-medium">Style: {art.style}</p>
                 <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
