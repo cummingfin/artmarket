@@ -79,7 +79,7 @@ export default function Dashboard() {
     <>
       <Navbar />
       <div className="min-h-screen bg-[#f8f8f8] px-4 py-10">
-        <div className="max-w-xl mx-auto bg-white shadow-md rounded-2xl p-8">
+        <div className="max-w-xl mx-auto bg-white shadow-sm rounded-2xl p-8">
           <h1 className="text-2xl font-bold mb-6 text-center text-black">Submit New Artwork</h1>
 
           <form className="space-y-4" onSubmit={handleUpload}>
