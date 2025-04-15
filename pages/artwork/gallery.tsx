@@ -104,18 +104,22 @@ export default function Gallery() {
               <div key={art.id} className="border p-4 rounded">
                 {/* Image links to artwork page */}
                 <Link href={`/artwork/${art.id}`}>
-                  <div className="w-full aspect-square overflow-hidden mb-4 border cursor-pointer">
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
-                      alt={art.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                  <a>
+                    <div className="w-full aspect-square overflow-hidden mb-4 border cursor-pointer">
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
+                        alt={art.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </a>
                 </Link>
 
                 {/* Title links to artwork page */}
                 <Link href={`/artwork/${art.id}`}>
-                  <h2 className="text-xl font-semibold mb-1 hover:underline cursor-pointer">{art.title}</h2>
+                  <a>
+                    <h2 className="text-xl font-semibold mb-1 hover:underline cursor-pointer">{art.title}</h2>
+                  </a>
                 </Link>
 
                 <p className="text-sm text-gray-700 mb-1">{art.description}</p>
@@ -125,7 +129,7 @@ export default function Gallery() {
                   <p className="text-sm text-gray-500 mb-1">
                     by{' '}
                     <Link href={`/profile/${art.profiles.id}`}>
-                      <span className="underline hover:text-black">{art.profiles.username}</span>
+                      <a className="underline hover:text-black">{art.profiles.username}</a>
                     </Link>
                   </p>
                 )}
