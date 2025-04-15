@@ -13,7 +13,7 @@ interface Artwork {
   style?: string;
   profiles?: {
     id: string;
-    email: string;
+    username: string;
   };
 }
 
@@ -27,7 +27,7 @@ export default function Gallery() {
     const fetchArtworks = async () => {
       const { data, error } = await supabase
         .from('artworks')
-        .select('*, profiles ( id, email )')
+        .select('*, profiles ( id, username )') // 👈 updated to use username
         .order('created_at', { ascending: false });
 
       if (!error) {
@@ -103,7 +103,6 @@ export default function Gallery() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {filtered.map((art) => (
               <div key={art.id} className="border p-4 rounded">
-                {/* Image links to artwork page */}
                 <Link href={`/artwork/${art.id}`}>
                   <a>
                     <div className="w-full aspect-square overflow-hidden mb-4 border cursor-pointer">
@@ -116,7 +115,6 @@ export default function Gallery() {
                   </a>
                 </Link>
 
-                {/* Title links to artwork page */}
                 <Link href={`/artwork/${art.id}`}>
                   <a>
                     <h2 className="text-xl font-semibold mb-1 hover:underline cursor-pointer">{art.title}</h2>
@@ -125,12 +123,12 @@ export default function Gallery() {
 
                 <p className="text-sm text-gray-700 mb-1">{art.description}</p>
 
-                {/* Artist profile link (text only) */}
+                {/* 👇 Username instead of email */}
                 {art.profiles?.id && (
                   <p className="text-sm text-gray-500 mb-1">
                     by{' '}
                     <Link href={`/profile/${art.profiles.id}`}>
-                      <a className="underline hover:text-black">{art.profiles.email}</a>
+                      <a className="underline hover:text-black">{art.profiles.username}</a>
                     </Link>
                   </p>
                 )}

@@ -6,6 +6,7 @@ export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [role, setRole] = useState('artist');
   const [error, setError] = useState('');
 
@@ -13,11 +14,16 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
+    if (!username.trim()) {
+      setError('Username is required');
+      return;
+    }
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { role }, // Save role as metadata
+        data: { role, username },
       },
     });
 
@@ -28,20 +34,20 @@ export default function Register() {
 
     console.log('✅ Registered user:', data.user);
 
-    // 🟡 Wait for session before inserting profile
+    // ⏳ Wait for session (in case user confirms email immediately)
     const { data: sessionData } = await supabase.auth.getSession();
+    const user = sessionData.session?.user;
 
-    if (!sessionData.session) {
-      console.warn('⏳ No session yet, user must confirm email first');
+    if (!user) {
+      console.warn('⏳ No session yet — waiting for email confirmation.');
       return router.push('/auth/login');
     }
-
-    const user = sessionData.session.user;
 
     const { error: insertError } = await supabase.from('profiles').insert([
       {
         id: user.id,
         email: user.email,
+        username: username,
       },
     ]);
 
@@ -72,6 +78,14 @@ export default function Register() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <input
+          className="border p-2 w-64"
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
         />
         <select
