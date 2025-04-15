@@ -1,4 +1,3 @@
-// pages/auth/login.tsx
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -27,23 +26,38 @@ export default function Login() {
     const user = data.user;
 
     if (user) {
-      // ✅ Attempt to insert profile (skip if already exists)
-      const { error: insertError } = await supabase.from('profiles').insert([
-        {
-          id: user.id,
-          email: user.email,
-        },
-      ]);
+      const username = user.user_metadata?.username || null;
 
-      if (insertError && insertError.code !== '23505') {
-        // 23505 is "duplicate key" (i.e. profile already exists)
-        console.error('Error inserting into profiles:', insertError);
+      if (!username) {
+        console.warn('No username found in metadata — skipping profile insert');
       } else {
-        console.log('✅ Inserted profile or already exists.');
+        // ✅ Check if profile exists
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+
+        if (!existingProfile) {
+          const { error: insertError } = await supabase.from('profiles').insert([
+            {
+              id: user.id,
+              email: user.email,
+              username,
+            },
+          ]);
+
+          if (insertError) {
+            console.error('❌ Error inserting profile:', insertError);
+          } else {
+            console.log('✅ Inserted new profile.');
+          }
+        } else {
+          console.log('ℹ️ Profile already exists.');
+        }
       }
     }
 
-    // ✅ Redirect to homepage
     router.push('/');
   };
 

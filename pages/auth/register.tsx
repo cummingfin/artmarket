@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function Register() {
@@ -7,7 +8,6 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [role, setRole] = useState('artist');
   const [error, setError] = useState('');
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -23,7 +23,7 @@ export default function Register() {
       email,
       password,
       options: {
-        data: { role, username },
+        data: { username }, // Save username to metadata
       },
     });
 
@@ -61,46 +61,52 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white text-black">
-      <h2 className="text-2xl font-bold mb-4">Register</h2>
-      <form className="space-y-4" onSubmit={handleRegister}>
-        <input
-          className="border p-2 w-64"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          className="border p-2 w-64"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <input
-          className="border p-2 w-64"
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <select
-          className="border p-2 w-64"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          <option value="artist">Artist</option>
-          <option value="customer">Customer</option>
-        </select>
-        <button className="bg-black text-white py-2 px-4" type="submit">
-          Sign Up
-        </button>
-        {error && <p className="text-red-500">{error}</p>}
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-white text-black px-4">
+      <div className="w-full max-w-md space-y-6 border p-6 rounded-xl shadow">
+        <h2 className="text-2xl font-bold text-center">Register</h2>
+
+        <form className="space-y-4" onSubmit={handleRegister}>
+          <input
+            className="border p-2 w-full"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            className="border p-2 w-full"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <input
+            className="border p-2 w-full"
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+
+          <button className="bg-black text-white w-full py-2 rounded hover:bg-gray-900" type="submit">
+            Sign Up
+          </button>
+
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        </form>
+
+        <div className="text-center">
+          <p className="text-sm">
+            Already have an account?{' '}
+            <Link href="/auth/login" className="text-blue-600 hover:underline">
+              Log in instead
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
