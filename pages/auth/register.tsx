@@ -1,4 +1,3 @@
-// pages/auth/register.tsx
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabaseClient';
@@ -6,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState(''); 
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState('artist');
   const [error, setError] = useState('');
 
@@ -18,7 +17,7 @@ export default function Register() {
       email,
       password,
       options: {
-        data: { role }, // Save role as user metadata
+        data: { role }, // Save role as metadata
       },
     });
 
@@ -27,22 +26,29 @@ export default function Register() {
       return;
     }
 
-    const user = data.user;
-    console.log('Registered user:', user); // ✅ Debug
+    console.log('✅ Registered user:', data.user);
 
-    if (user) {
-      const { error: insertError } = await supabase.from('profiles').insert([
-        {
-          id: user.id,
-          email: user.email,
-        },
-      ]);
+    // 🟡 Wait for session before inserting profile
+    const { data: sessionData } = await supabase.auth.getSession();
 
-      if (insertError) {
-        console.error('Error inserting into profiles:', insertError);
-      } else {
-        console.log('✅ Inserted into profiles successfully');
-      }
+    if (!sessionData.session) {
+      console.warn('⏳ No session yet, user must confirm email first');
+      return router.push('/auth/login');
+    }
+
+    const user = sessionData.session.user;
+
+    const { error: insertError } = await supabase.from('profiles').insert([
+      {
+        id: user.id,
+        email: user.email,
+      },
+    ]);
+
+    if (insertError) {
+      console.error('❌ Error inserting into profiles:', insertError);
+    } else {
+      console.log('✅ Profile inserted successfully');
     }
 
     router.push('/auth/login');
