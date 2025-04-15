@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 
-export default function ArtistDashboard() {
+export default function Dashboard() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -63,18 +63,16 @@ export default function ArtistDashboard() {
     }
 
     const { error: insertError } = await supabase
-      .from('artworks')
-      .insert([
-        {
-          title,
-          description,
-          price,
-          style,
-          image_url: storageData?.path,
-          status: 'pending',
-          artist_id: user.id,
-        },
-      ]);
+  .from('artworks')
+  .insert([
+    {
+      title,
+      description,
+      price,
+      style,
+      image_url: storageData?.path,
+    },
+  ]);
 
     if (insertError) {
       console.error('Insert Error:', insertError);

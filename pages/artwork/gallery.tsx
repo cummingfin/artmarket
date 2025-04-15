@@ -21,8 +21,8 @@ export default function Gallery() {
     const fetchApprovedArtworks = async () => {
       const { data, error } = await supabase
         .from('artworks')
-        .select('*')
-        .eq('status', 'approved');
+        .select('*');
+
 
       if (!error) {
         setArtworks(data || []);
