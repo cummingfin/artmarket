@@ -1,4 +1,3 @@
-// pages/dashboard/artist.tsx
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
@@ -79,79 +78,77 @@ export default function Dashboard() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-white text-black p-6 max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center">Upload Your Artwork</h1>
+      <div className="min-h-screen bg-[#f8f8f8] px-4 py-10">
+        <div className="max-w-xl mx-auto bg-white shadow-md rounded-2xl p-8">
+          <h1 className="text-2xl font-bold mb-6 text-center">Submit New Artwork</h1>
 
-        <div className="mb-8 p-4 bg-gray-50 border rounded">
-          <h2 className="text-lg font-semibold mb-2">Upload Guidelines</h2>
-          <ul className="list-disc pl-5 text-sm text-gray-700">
-            <li>Photograph artwork in good lighting</li>
-            <li>Use a clean white background</li>
-            <li>Ensure the image is in focus and fits the frame fully</li>
-          </ul>
+          <form className="space-y-4" onSubmit={handleUpload}>
+            <input
+              className="border border-gray-300 p-2 w-full rounded"
+              type="text"
+              placeholder="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+            <textarea
+              className="border border-gray-300 p-2 w-full rounded"
+              placeholder="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+            <input
+              className="border border-gray-300 p-2 w-full rounded"
+              type="number"
+              placeholder="Price (£)"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              required
+            />
+            <select
+              className="border border-gray-300 p-2 w-full rounded"
+              value={style}
+              onChange={(e) => setStyle(e.target.value)}
+              required
+            >
+              <option value="">Select Style</option>
+              <option value="abstract">Abstract</option>
+              <option value="realism">Realism</option>
+              <option value="minimalist">Minimalist</option>
+              <option value="popart">Pop Art</option>
+              <option value="other">Other</option>
+            </select>
+
+            <input
+              className="border border-gray-300 p-2 w-full rounded"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              required
+            />
+
+            {previewUrl && (
+              <div className="mt-4">
+                <p className="text-sm font-medium mb-2">Preview:</p>
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="rounded shadow-sm max-h-64 object-cover"
+                />
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
+            >
+              Submit Artwork
+            </button>
+
+            {message && <p className="text-sm text-center mt-2 text-green-600">{message}</p>}
+          </form>
         </div>
-
-        <form onSubmit={handleUpload} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border p-3 rounded"
-            required
-          />
-          <textarea
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full border p-3 rounded"
-            required
-          />
-          <input
-            type="number"
-            placeholder="Price (£)"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className="w-full border p-3 rounded"
-            required
-          />
-          <select
-            value={style}
-            onChange={(e) => setStyle(e.target.value)}
-            className="w-full border p-3 rounded"
-            required
-          >
-            <option value="">Select Art Style</option>
-            <option value="abstract">Abstract</option>
-            <option value="realism">Realism</option>
-            <option value="minimalist">Minimalist</option>
-            <option value="popart">Pop Art</option>
-            <option value="other">Other</option>
-          </select>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="w-full border p-3 rounded bg-white"
-            required
-          />
-
-          {previewUrl && (
-            <div className="mt-4">
-              <p className="text-sm font-semibold">Preview:</p>
-              <img src={previewUrl} alt="Preview" className="mt-2 w-64 h-auto border rounded" />
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="bg-black text-white w-full py-3 rounded hover:bg-gray-800 transition"
-          >
-            Submit Artwork
-          </button>
-
-          {message && <p className="mt-2 text-center text-sm text-green-600">{message}</p>}
-        </form>
       </div>
     </>
   );
