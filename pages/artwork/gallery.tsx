@@ -1,6 +1,7 @@
 // pages/artwork/gallery.tsx
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import Navbar from '@/components/Navbar'; // 👈 Make sure the path matches your folder structure
 
 type Artwork = {
   id: string;
@@ -24,7 +25,7 @@ export default function Gallery() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('Fetched artworks:', data); // ✅ Debug line
+      console.log('Fetched artworks:', data); // ✅ Debug
 
       if (!error) {
         setArtworks(data || []);
@@ -66,52 +67,56 @@ export default function Gallery() {
   };
 
   return (
-    <div className="min-h-screen p-8 bg-white text-black">
-      <h1 className="text-3xl font-bold mb-6">Explore Original Artwork</h1>
+    <>
+      <Navbar />
 
-      <div className="flex gap-4 mb-6">
-        <select className="border p-2" onChange={(e) => setPriceFilter(e.target.value)} value={priceFilter}>
-          <option value="all">All Prices</option>
-          <option value="under50">Under £50</option>
-          <option value="50to100">£50 - £100</option>
-          <option value="over100">Over £100</option>
-        </select>
+      <div className="min-h-screen p-8 bg-white text-black">
+        <h1 className="text-3xl font-bold mb-6">Explore Original Artwork</h1>
 
-        <select className="border p-2" onChange={(e) => setStyleFilter(e.target.value)} value={styleFilter}>
-          <option value="all">All Styles</option>
-          <option value="abstract">Abstract</option>
-          <option value="realism">Realism</option>
-          <option value="minimalist">Minimalist</option>
-          <option value="popart">Pop Art</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
+        <div className="flex gap-4 mb-6">
+          <select className="border p-2" onChange={(e) => setPriceFilter(e.target.value)} value={priceFilter}>
+            <option value="all">All Prices</option>
+            <option value="under50">Under £50</option>
+            <option value="50to100">£50 - £100</option>
+            <option value="over100">Over £100</option>
+          </select>
 
-      {filtered.length === 0 ? (
-        <p>No artwork matches your filters.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {filtered.map((art) => (
-            <div key={art.id} className="border p-4 rounded">
-              <img
-                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
-                alt={art.title}
-                className="w-full h-auto mb-4 border"
-              />
-              <h2 className="text-xl font-semibold mb-1">{art.title}</h2>
-              <p className="text-sm text-gray-700 mb-2">{art.description}</p>
-              <p className="text-sm font-medium">Style: {art.style}</p>
-              <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
-              <button
-                className="bg-black text-white px-4 py-2"
-                onClick={() => handleBuy(art.title, art.price)}
-              >
-                Buy Now
-              </button>
-            </div>
-          ))}
+          <select className="border p-2" onChange={(e) => setStyleFilter(e.target.value)} value={styleFilter}>
+            <option value="all">All Styles</option>
+            <option value="abstract">Abstract</option>
+            <option value="realism">Realism</option>
+            <option value="minimalist">Minimalist</option>
+            <option value="popart">Pop Art</option>
+            <option value="other">Other</option>
+          </select>
         </div>
-      )}
-    </div>
+
+        {filtered.length === 0 ? (
+          <p>No artwork matches your filters.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {filtered.map((art) => (
+              <div key={art.id} className="border p-4 rounded">
+                <img
+                  src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
+                  alt={art.title}
+                  className="w-full h-auto mb-4 border"
+                />
+                <h2 className="text-xl font-semibold mb-1">{art.title}</h2>
+                <p className="text-sm text-gray-700 mb-2">{art.description}</p>
+                <p className="text-sm font-medium">Style: {art.style}</p>
+                <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
+                <button
+                  className="bg-black text-white px-4 py-2"
+                  onClick={() => handleBuy(art.title, art.price)}
+                >
+                  Buy Now
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
