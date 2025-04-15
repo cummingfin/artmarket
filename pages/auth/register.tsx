@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState(''); 
   const [role, setRole] = useState('artist');
   const [error, setError] = useState('');
 
@@ -18,7 +18,7 @@ export default function Register() {
       email,
       password,
       options: {
-        data: { role },
+        data: { role }, // Save role as user metadata
       },
     });
 
@@ -28,11 +28,9 @@ export default function Register() {
     }
 
     const user = data.user;
-    console.log('Registered user:', user);
+    console.log('Registered user:', user); // ✅ Debug
 
-    // ✅ Wait until the session is available before inserting into profiles
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData?.session && user) {
+    if (user) {
       const { error: insertError } = await supabase.from('profiles').insert([
         {
           id: user.id,
@@ -43,7 +41,7 @@ export default function Register() {
       if (insertError) {
         console.error('Error inserting into profiles:', insertError);
       } else {
-        console.log('Inserted into profiles successfully');
+        console.log('✅ Inserted into profiles successfully');
       }
     }
 
