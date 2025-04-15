@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 interface Profile {
   id: string;
-  email: string;
+  username: string;
   avatar_url?: string;
   bio?: string;
 }
@@ -34,7 +34,7 @@ export default function ProfilePage() {
     const fetchProfileAndArt = async () => {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, email, avatar_url, bio')
+        .select('id, username, avatar_url, bio')
         .eq('id', id)
         .maybeSingle();
 
@@ -74,11 +74,11 @@ export default function ProfilePage() {
               className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
             />
           )}
-          <h1 className="text-3xl font-bold">{profile.email}</h1>
+          <h1 className="text-3xl font-bold">{profile.username}</h1>
           {profile.bio && <p className="text-gray-600 mt-2">{profile.bio}</p>}
         </div>
 
-        <h2 className="text-2xl font-semibold mb-4">Artwork by {profile.email}</h2>
+        <h2 className="text-2xl font-semibold mb-4">Artwork by {profile.username}</h2>
 
         {artworks.length === 0 ? (
           <p>No artwork posted yet.</p>
