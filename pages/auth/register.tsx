@@ -6,51 +6,50 @@ import { supabase } from '@/lib/supabaseClient';
 export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState(''); 
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState('artist');
   const [error, setError] = useState('');
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-  
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { role }, // Save role as user metadata
+        data: { role },
       },
     });
-  
+
     if (signUpError) {
       setError(signUpError.message);
       return;
     }
-  
+
     const user = data.user;
     console.log('Registered user:', user);
-  
-    if (user) {
-      console.log('Registered user:', user); // 👈 Debug
-    
+
+    // ✅ Wait until the session is available before inserting into profiles
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session && user) {
       const { error: insertError } = await supabase.from('profiles').insert([
         {
           id: user.id,
           email: user.email,
         },
       ]);
-    
+
       if (insertError) {
         console.error('Error inserting into profiles:', insertError);
       } else {
-        console.log('Inserted into profiles successfully'); // 👈 Debug
+        console.log('Inserted into profiles successfully');
       }
     }
-    
-  
+
     router.push('/auth/login');
   };
-  
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white text-black">
       <h2 className="text-2xl font-bold mb-4">Register</h2>
