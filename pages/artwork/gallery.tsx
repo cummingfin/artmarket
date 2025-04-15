@@ -4,14 +4,18 @@ import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 
-type Artwork = {
+interface Artwork {
   id: string;
   title: string;
   description: string;
   price: number;
   image_url: string;
   style?: string;
-};
+  profiles?: {
+    id: string;
+    email: string;
+  };
+}
 
 export default function Gallery() {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
@@ -23,7 +27,7 @@ export default function Gallery() {
     const fetchArtworks = async () => {
       const { data, error } = await supabase
         .from('artworks')
-        .select('*')
+        .select('*, profiles ( id, email )') // include artist info
         .order('created_at', { ascending: false });
 
       if (!error) {
@@ -109,8 +113,16 @@ export default function Gallery() {
                 <p className="text-sm text-gray-700 mb-2">{art.description}</p>
                 <p className="text-sm font-medium">Style: {art.style}</p>
                 <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
+                {art.profiles && (
+                  <p className="text-sm text-gray-500">
+                    by{' '}
+                    <Link href={`/profile/${art.profiles.id}`} className="underline hover:text-black">
+                      {art.profiles.email}
+                    </Link>
+                  </p>
+                )}
                 <button
-                  className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+                  className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 mt-2"
                   onClick={() => handleBuy(art.title, art.price)}
                 >
                   Buy Now
