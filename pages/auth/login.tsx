@@ -24,7 +24,9 @@ export default function Login() {
     }
 
     const user = data.user;
-    const role = user?.user_metadata?.role;
+    if (user) {
+        router.push('/dashboard');
+      }
 
     router.push('/dashboard');
 
