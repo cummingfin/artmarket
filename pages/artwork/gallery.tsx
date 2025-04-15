@@ -18,11 +18,13 @@ export default function Gallery() {
   const [styleFilter, setStyleFilter] = useState('all');
 
   useEffect(() => {
-    const fetchApprovedArtworks = async () => {
+    const fetchArtworks = async () => {
       const { data, error } = await supabase
         .from('artworks')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
+      console.log('Fetched artworks:', data); // ✅ Debug line
 
       if (!error) {
         setArtworks(data || []);
@@ -30,7 +32,7 @@ export default function Gallery() {
       }
     };
 
-    fetchApprovedArtworks();
+    fetchArtworks();
   }, []);
 
   useEffect(() => {
