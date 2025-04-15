@@ -1,8 +1,9 @@
 // pages/artwork/gallery.tsx
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import Navbar from '@/components/Navbar'; // 👈 Make sure the path matches your folder structure
+import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import Image from 'next/image';
 
 type Artwork = {
   id: string;
@@ -26,7 +27,7 @@ export default function Gallery() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('Fetched artworks:', data); // ✅ Debug
+      console.log('Fetched artworks:', data);
 
       if (!error) {
         setArtworks(data || []);
@@ -53,19 +54,6 @@ export default function Gallery() {
 
     setFiltered(filteredData);
   }, [priceFilter, styleFilter, artworks]);
-
-  const handleBuy = async (title: string, price: number) => {
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, price }),
-    });
-
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    }
-  };
 
   return (
     <>
@@ -98,26 +86,26 @@ export default function Gallery() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {filtered.map((art) => (
               <Link
-              href={`/artwork/${art.id}`}
-              key={art.id}
-              className="block border p-4 rounded hover:shadow transition"
-            >
-              <div className="w-full aspect-square overflow-hidden mb-4 border">
-                <img
-                  src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
-                  alt={art.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h2 className="text-xl font-semibold mb-1">{art.title}</h2>
-              <p className="text-sm text-gray-700 mb-2">{art.description}</p>
-              <p className="text-sm font-medium">Style: {art.style}</p>
-              <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
-              <div className="bg-black text-white text-center py-2 rounded mt-2">
-                Buy Now
-              </div>
-            </Link>
-            
+                href={`/artwork/${art.id}`}
+                key={art.id}
+                className="block border p-4 rounded hover:shadow transition"
+              >
+                <div className="relative w-full aspect-square mb-4 border">
+                  <Image
+                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
+                    alt={art.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <h2 className="text-xl font-semibold mb-1">{art.title}</h2>
+                <p className="text-sm text-gray-700 mb-2">{art.description}</p>
+                <p className="text-sm font-medium">Style: {art.style}</p>
+                <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
+                <div className="bg-black text-white text-center py-2 rounded mt-2">
+                  Buy Now
+                </div>
+              </Link>
             ))}
           </div>
         )}
