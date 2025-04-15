@@ -71,6 +71,7 @@ export default function Dashboard() {
       price,
       style,
       image_url: storageData?.path,
+      artist_id: user.id,
     },
   ]);
 
