@@ -13,19 +13,39 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-  
-    const { error: loginError } = await supabase.auth.signInWithPassword({
+
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-  
+
     if (loginError) {
       setError(loginError.message);
-    } else {
-      router.push('/'); // ✅ Redirect to homepage after login
+      return;
     }
+
+    const user = data.user;
+
+    if (user) {
+      // ✅ Attempt to insert profile (skip if already exists)
+      const { error: insertError } = await supabase.from('profiles').insert([
+        {
+          id: user.id,
+          email: user.email,
+        },
+      ]);
+
+      if (insertError && insertError.code !== '23505') {
+        // 23505 is "duplicate key" (i.e. profile already exists)
+        console.error('Error inserting into profiles:', insertError);
+      } else {
+        console.log('✅ Inserted profile or already exists.');
+      }
+    }
+
+    // ✅ Redirect to homepage
+    router.push('/');
   };
-  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black px-4">
@@ -60,12 +80,12 @@ export default function Login() {
         </form>
 
         <div className="text-center">
-            <p className="text-sm">
-                {"Don't have an account? "}
-                <Link href="/auth/register" className="text-blue-600 hover:underline">
-                    Sign up instead
-                </Link>
-            </p>
+          <p className="text-sm">
+            {"Don't have an account? "}
+            <Link href="/auth/register" className="text-blue-600 hover:underline">
+              Sign up instead
+            </Link>
+          </p>
         </div>
       </div>
     </div>
