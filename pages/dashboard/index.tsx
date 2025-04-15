@@ -80,11 +80,11 @@ export default function Dashboard() {
       <Navbar />
       <div className="min-h-screen bg-[#f8f8f8] px-4 py-10">
         <div className="max-w-xl mx-auto bg-white shadow-md rounded-2xl p-8">
-          <h1 className="text-2xl font-bold mb-6 text-center">Submit New Artwork</h1>
+          <h1 className="text-2xl font-bold mb-6 text-center text-black">Submit New Artwork</h1>
 
           <form className="space-y-4" onSubmit={handleUpload}>
             <input
-              className="border border-gray-300 p-2 w-full rounded"
+              className="border border-black p-2 w-full rounded text-black"
               type="text"
               placeholder="Title"
               value={title}
@@ -92,14 +92,14 @@ export default function Dashboard() {
               required
             />
             <textarea
-              className="border border-gray-300 p-2 w-full rounded"
+              className="border border-black p-2 w-full rounded text-black"
               placeholder="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
             />
             <input
-              className="border border-gray-300 p-2 w-full rounded"
+              className="border border-black p-2 w-full rounded text-black"
               type="number"
               placeholder="Price (£)"
               value={price}
@@ -107,7 +107,7 @@ export default function Dashboard() {
               required
             />
             <select
-              className="border border-gray-300 p-2 w-full rounded"
+              className="border border-black p-2 w-full rounded text-black"
               value={style}
               onChange={(e) => setStyle(e.target.value)}
               required
@@ -121,7 +121,7 @@ export default function Dashboard() {
             </select>
 
             <input
-              className="border border-gray-300 p-2 w-full rounded"
+              className="border border-black p-2 w-full rounded text-black"
               type="file"
               accept="image/*"
               onChange={handleImageChange}
@@ -130,7 +130,7 @@ export default function Dashboard() {
 
             {previewUrl && (
               <div className="mt-4">
-                <p className="text-sm font-medium mb-2">Preview:</p>
+                <p className="text-sm font-medium text-black mb-2">Preview:</p>
                 <img
                   src={previewUrl}
                   alt="Preview"
