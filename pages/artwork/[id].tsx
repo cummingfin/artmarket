@@ -1,16 +1,8 @@
-// pages/profile/[id].tsx
+// pages/artwork/[id].tsx
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
-import Link from 'next/link';
-
-type Profile = {
-  id: string;
-  email: string;
-  avatar_url?: string;
-  bio?: string;
-};
 
 type Artwork = {
   id: string;
@@ -21,80 +13,57 @@ type Artwork = {
   style?: string;
 };
 
-export default function ProfilePage() {
+export default function ArtworkDetail() {
   const router = useRouter();
   const { id } = router.query;
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [artwork, setArtwork] = useState<Artwork | null>(null);
 
   useEffect(() => {
     if (!id) return;
 
-    const fetchProfileAndArt = async () => {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id, email, avatar_url, bio')
+    const fetchArtwork = async () => {
+      const { data, error } = await supabase
+        .from('artworks')
+        .select('*')
         .eq('id', id)
         .single();
 
-      const { data: artworkData } = await supabase
-        .from('artworks')
-        .select('*')
-        .eq('artist_id', id)
-        .order('created_at', { ascending: false });
-
-      setProfile(profileData);
-      setArtworks(artworkData || []);
+      if (!error) {
+        setArtwork(data);
+      }
     };
 
-    fetchProfileAndArt();
+    fetchArtwork();
   }, [id]);
 
-  if (!profile) return <p className="p-8">Loading profile...</p>;
+  if (!artwork) return <p className="p-8">Loading artwork...</p>;
 
   return (
     <>
       <Navbar />
-      <div className="p-8 bg-white text-black">
-        <div className="max-w-3xl mx-auto text-center mb-10">
-          {profile.avatar_url && (
-            <img
-              src={profile.avatar_url}
-              alt="Avatar"
-              className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
-            />
-          )}
-          <h1 className="text-3xl font-bold">{profile.email}</h1>
-          {profile.bio && <p className="text-gray-600 mt-2">{profile.bio}</p>}
+      <div className="p-8 bg-white text-black max-w-3xl mx-auto">
+        <div className="aspect-square w-full overflow-hidden mb-6 border">
+          <img
+            src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${artwork.image_url}`}
+            alt={artwork.title}
+            className="w-full h-full object-cover"
+          />
         </div>
+        <h1 className="text-3xl font-bold mb-2">{artwork.title}</h1>
+        <p className="text-gray-700 mb-2">{artwork.description}</p>
+        <p className="font-semibold mb-2">Style: {artwork.style}</p>
+        <p className="font-semibold mb-6 text-lg">Price: £{artwork.price}</p>
 
-        <h2 className="text-2xl font-semibold mb-4">Artwork by {profile.email}</h2>
-
-        {artworks.length === 0 ? (
-          <p>No artwork posted yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {artworks.map((art) => (
-              <Link
-                key={art.id}
-                href={`/artwork/${art.id}`}
-                className="border p-4 rounded hover:shadow transition"
-              >
-                <div className="w-full aspect-square overflow-hidden mb-4 border">
-                  <img
-                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
-                    alt={art.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <h3 className="text-lg font-semibold">{art.title}</h3>
-                <p className="text-sm text-gray-600">{art.description}</p>
-                <p className="text-sm font-medium mt-1">£{art.price}</p>
-              </Link>
-            ))}
-          </div>
-        )}
+        <button
+          className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
+          onClick={() => {
+            // placeholder checkout handler
+            alert('Checkout coming soon!');
+          }}
+        >
+          Buy Now
+        </button>
       </div>
     </>
   );
