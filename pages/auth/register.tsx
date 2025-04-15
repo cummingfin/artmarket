@@ -28,20 +28,25 @@ export default function Register() {
     }
   
     const user = data.user;
+    console.log('Registered user:', user);
   
     if (user) {
-      // 👇 Insert into profiles
+      console.log('Registered user:', user); // 👈 Debug
+    
       const { error: insertError } = await supabase.from('profiles').insert([
         {
           id: user.id,
           email: user.email,
         },
       ]);
-  
+    
       if (insertError) {
         console.error('Error inserting into profiles:', insertError);
+      } else {
+        console.log('Inserted into profiles successfully'); // 👈 Debug
       }
     }
+    
   
     router.push('/auth/login');
   };
