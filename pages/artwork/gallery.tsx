@@ -100,34 +100,39 @@ export default function Gallery() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {filtered.map((art) => (
               <div key={art.id} className="border p-4 rounded">
-                <Link href={`/artwork/${art.id}`}>
-                  <div className="w-full aspect-square overflow-hidden mb-4 border cursor-pointer">
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
-                      alt={art.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </Link>
-                <h2 className="text-xl font-semibold mb-1">{art.title}</h2>
-                <p className="text-sm text-gray-700 mb-2">{art.description}</p>
-                <p className="text-sm font-medium">Style: {art.style}</p>
-                <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
-                {art.profiles && (
-                  <p className="text-sm text-gray-500">
-                    by{' '}
-                    <Link href={`/profile/${art.profiles.id}`} className="underline hover:text-black">
-                      {art.profiles.email}
-                    </Link>
-                  </p>
-                )}
-                <button
-                  className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 mt-2"
-                  onClick={() => handleBuy(art.title, art.price)}
-                >
-                  Buy Now
-                </button>
-              </div>
+              <Link href={`/artwork/${art.id}`}>
+                <div className="w-full aspect-square overflow-hidden mb-4 border cursor-pointer">
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
+                    alt={art.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </Link>
+            
+              <h2 className="text-xl font-semibold mb-1">{art.title}</h2>
+              <p className="text-sm text-gray-700 mb-2">{art.description}</p>
+              <p className="text-sm font-medium">Style: {art.style}</p>
+              <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
+            
+              {/* 👇 Profile link */}
+              {art.profiles && (
+                <p className="text-sm text-gray-500 mb-2">
+                  Uploaded by{' '}
+                  <Link href={`/profile/${art.profiles.id}`} className="underline text-blue-600 hover:text-blue-800">
+                    {art.profiles.email}
+                  </Link>
+                </p>
+              )}
+            
+              <button
+                className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 mt-2"
+                onClick={() => handleBuy(art.title, art.price)}
+              >
+                Buy Now
+              </button>
+            </div>
+            
             ))}
           </div>
         )}
