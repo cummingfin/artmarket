@@ -97,29 +97,27 @@ export default function Gallery() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {filtered.map((art) => (
-              <div key={art.id} className="border p-4 rounded">
-                <div className="w-full aspect-square overflow-hidden mb-4 border">
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
-                      alt={art.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                <Link href={`/artwork/${art.id}`}>
-                  <h2 className="text-xl font-semibold mb-1 hover:underline cursor-pointer">
-                    {art.title}
-                  </h2>
-                </Link>
-                <p className="text-sm text-gray-700 mb-2">{art.description}</p>
-                <p className="text-sm font-medium">Style: {art.style}</p>
-                <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
-                <button
-                  className="bg-black text-white px-4 py-2"
-                  onClick={() => handleBuy(art.title, art.price)}
-                >
-                  Buy Now
-                </button>
+              <Link
+              href={`/artwork/${art.id}`}
+              key={art.id}
+              className="block border p-4 rounded hover:shadow transition"
+            >
+              <div className="w-full aspect-square overflow-hidden mb-4 border">
+                <img
+                  src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
+                  alt={art.title}
+                  className="w-full h-full object-cover"
+                />
               </div>
+              <h2 className="text-xl font-semibold mb-1">{art.title}</h2>
+              <p className="text-sm text-gray-700 mb-2">{art.description}</p>
+              <p className="text-sm font-medium">Style: {art.style}</p>
+              <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
+              <div className="bg-black text-white text-center py-2 rounded mt-2">
+                Buy Now
+              </div>
+            </Link>
+            
             ))}
           </div>
         )}
