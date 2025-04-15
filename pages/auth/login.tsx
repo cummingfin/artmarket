@@ -1,6 +1,7 @@
 // pages/auth/login.tsx
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function Login() {
@@ -20,43 +21,52 @@ export default function Login() {
 
     if (loginError) {
       setError(loginError.message);
-      return;
+    } else {
+      router.push('/dashboard'); // Redirect after login
     }
-
-    const user = data.user;
-    if (user) {
-        router.push('/dashboard');
-      }
-
-    router.push('/dashboard');
-
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white text-black">
-      <h2 className="text-2xl font-bold mb-4">Login</h2>
-      <form className="space-y-4" onSubmit={handleLogin}>
-        <input
-          className="border p-2 w-64"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          className="border p-2 w-64"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button className="bg-black text-white py-2 px-4" type="submit">
-          Login
-        </button>
-        {error && <p className="text-red-500">{error}</p>}
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-white text-black px-4">
+      <div className="w-full max-w-md space-y-6 border p-6 rounded-xl shadow">
+        <h2 className="text-2xl font-bold text-center">Log In</h2>
+
+        <form className="space-y-4" onSubmit={handleLogin}>
+          <input
+            className="border p-2 w-full"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            className="border p-2 w-full"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <button
+            className="bg-black text-white w-full py-2 rounded hover:bg-gray-900"
+            type="submit"
+          >
+            Log In
+          </button>
+          {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+        </form>
+
+        <div className="text-center">
+          <p className="text-sm">
+            Don't have an account?{' '}
+            <Link href="/auth/register" className="text-blue-600 hover:underline">
+              Sign up instead
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
