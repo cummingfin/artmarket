@@ -20,11 +20,21 @@ export default function Login() {
 
     if (loginError) {
       setError(loginError.message);
+      return;
+    }
+
+    const user = data.user;
+    const role = user?.user_metadata?.role;
+
+    if (role === 'admin') {
+      router.push('/dashboard/admin');
+    } else if (role === 'artist') {
+      router.push('/dashboard/artist');
+    } else if (role === 'customer') {
+      router.push('/dashboard/customer');
     } else {
-      const role = data.user.user_metadata.role;
-      if (role === 'artist') router.push('/dashboard/artist');
-      else if (role === 'customer') router.push('/dashboard/customer');
-      else router.push('/');
+      // fallback in case role is missing or unknown
+      router.push('/');
     }
   };
 
