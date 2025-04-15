@@ -13,18 +13,19 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
+  
     const { error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      email,
+      password,
+    });
+  
     if (loginError) {
       setError(loginError.message);
     } else {
-      router.push('/dashboard'); // Redirect after login
+      router.push('/'); // ✅ Redirect to homepage after login
     }
   };
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black px-4">
