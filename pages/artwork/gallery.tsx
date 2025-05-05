@@ -3,8 +3,8 @@ import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import BuyButton from '@/components/BuyButton';
+import OfferModal from '@/components/OfferModal';
 
-// ...unchanged imports
 interface Artwork {
   id: string;
   title: string;
@@ -13,7 +13,7 @@ interface Artwork {
   image_url: string;
   style?: string;
   sold?: boolean;
-  shipping_cost: number; // ✅ Added
+  shipping_cost: number;
   profiles?: {
     id: string;
     username: string;
@@ -25,6 +25,8 @@ export default function Gallery() {
   const [filtered, setFiltered] = useState<Artwork[]>([]);
   const [priceFilter, setPriceFilter] = useState('all');
   const [styleFilter, setStyleFilter] = useState('all');
+  const [activeArtwork, setActiveArtwork] = useState<Artwork | null>(null);
+  const [showOfferModal, setShowOfferModal] = useState(false);
 
   useEffect(() => {
     const fetchArtworks = async () => {
@@ -32,21 +34,19 @@ export default function Gallery() {
         .from('artworks')
         .select('id, title, description, price, image_url, style, sold, shipping_cost, profiles ( id, username )')
         .order('created_at', { ascending: false });
-  
+
       if (!error && data) {
-        // Flatten the nested profiles array (Supabase may return it as an array)
         const formatted = data.map((art) => ({
           ...art,
           profiles: Array.isArray(art.profiles) ? art.profiles[0] : art.profiles,
         }));
-  
         setArtworks(formatted);
         setFiltered(formatted);
       } else if (error) {
         console.error('Error fetching artworks:', error.message);
       }
     };
-  
+
     fetchArtworks();
   }, []);
 
@@ -131,7 +131,9 @@ export default function Gallery() {
                     <p className="text-sm text-gray-500 mb-1">
                       by{' '}
                       <Link href={`/profile/${art.profiles.id}`}>
-                        <span className="underline hover:text-black">{art.profiles.username}</span>
+                        <span className="underline hover:text-black">
+                          {art.profiles.username}
+                        </span>
                       </Link>
                     </p>
                   )}
@@ -141,16 +143,35 @@ export default function Gallery() {
                   <p className="text-sm font-medium mb-2">Shipping: £{art.shipping_cost}</p>
 
                   {!art.sold ? (
-                    <BuyButton
-                      artwork={{
-                        id: art.id,
-                        title: art.title,
-                        price: art.price,
-                        shipping_cost: art.shipping_cost,
-                      }}
-                    />
+                    <>
+                      <BuyButton
+                        artwork={{
+                          id: art.id,
+                          title: art.title,
+                          price: art.price,
+                          shipping_cost: art.shipping_cost,
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          setActiveArtwork(art);
+                          setShowOfferModal(true);
+                        }}
+                        className="mt-2 text-sm underline text-blue-600 hover:text-blue-800"
+                      >
+                        Make an Offer
+                      </button>
+                    </>
                   ) : (
-                    <p className="text-red-500 font-semibold text-sm mt-2">Sold</p>
+                    <>
+                      <p className="text-red-500 font-semibold text-sm mt-2">Sold</p>
+                      <button
+                        disabled
+                        className="mt-2 text-sm underline text-gray-400 cursor-not-allowed"
+                      >
+                        Make an Offer
+                      </button>
+                    </>
                   )}
                 </div>
               ))}
@@ -158,6 +179,21 @@ export default function Gallery() {
           )}
         </div>
       </div>
+
+      {/* Offer Modal */}
+      {activeArtwork && (
+        <OfferModal
+          isOpen={showOfferModal}
+          onClose={() => {
+            setShowOfferModal(false);
+            setActiveArtwork(null);
+          }}
+          artistId={activeArtwork.profiles?.id || ''}
+          artworkId={activeArtwork.id}
+          artworkTitle={activeArtwork.title}
+          price={activeArtwork.price}
+        />
+      )}
     </>
   );
 }

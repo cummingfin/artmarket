@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import BuyButton from '@/components/BuyButton';
+import OfferModal from '@/components/OfferModal';
 
 type Artwork = {
   id: string;
@@ -26,6 +27,7 @@ export default function ArtworkDetail() {
   const { id } = router.query;
 
   const [artwork, setArtwork] = useState<Artwork | null>(null);
+  const [showOfferModal, setShowOfferModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -38,7 +40,6 @@ export default function ArtworkDetail() {
         .maybeSingle();
 
       if (!error && data) {
-        // Flatten profile if needed (some Supabase versions may return as array)
         const formatted = {
           ...data,
           profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
@@ -90,18 +91,46 @@ export default function ArtworkDetail() {
         )}
 
         {!artwork.sold ? (
-          <BuyButton
-            artwork={{
-              id: artwork.id,
-              title: artwork.title,
-              price: artwork.price,
-              shipping_cost: artwork.shipping_cost || 0,
-            }}
-          />
+          <>
+            <BuyButton
+              artwork={{
+                id: artwork.id,
+                title: artwork.title,
+                price: artwork.price,
+                shipping_cost: artwork.shipping_cost || 0,
+              }}
+            />
+            <button
+              onClick={() => setShowOfferModal(true)}
+              className="mt-3 text-sm underline text-blue-600 hover:text-blue-800"
+            >
+              Make an Offer
+            </button>
+          </>
         ) : (
-          <p className="text-red-500 font-semibold text-sm">Sold</p>
+          <>
+            <p className="text-red-500 font-semibold text-sm">Sold</p>
+            <button
+              disabled
+              className="mt-2 text-sm underline text-gray-400 cursor-not-allowed"
+            >
+              Make an Offer
+            </button>
+          </>
         )}
       </div>
+
+      {/* Offer Modal */}
+      {artwork && (
+        <OfferModal
+          isOpen={showOfferModal}
+          onClose={() => setShowOfferModal(false)}
+          artistId={artwork.profiles?.id || ''}
+          artworkId={artwork.id}
+          artworkTitle={artwork.title}
+          price={artwork.price}
+        />
+      )}
     </>
   );
 }

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import BuyButton from '@/components/BuyButton';
+import OfferModal from '@/components/OfferModal';
 
 interface Profile {
   id: string;
@@ -29,6 +30,8 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [activeArtwork, setActiveArtwork] = useState<Artwork | null>(null);
+  const [showOfferModal, setShowOfferModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -99,29 +102,64 @@ export default function ProfilePage() {
                 </Link>
                 <h3 className="text-lg font-semibold">{art.title}</h3>
                 <p className="text-sm text-gray-600">{art.description}</p>
-                <p className="text-sm font-medium mt-1">Price: £{art.price}</p>
+                <p className="text-sm font-medium">Price: £{art.price}</p>
                 {art.shipping_cost !== undefined && (
                   <p className="text-sm text-gray-500 mb-1">
                     + £{art.shipping_cost} shipping
                   </p>
                 )}
+
                 {!art.sold ? (
-                  <BuyButton
-                    artwork={{
-                      id: art.id,
-                      title: art.title,
-                      price: art.price,
-                      shipping_cost: art.shipping_cost || 0,
-                    }}
-                  />
+                  <>
+                    <BuyButton
+                      artwork={{
+                        id: art.id,
+                        title: art.title,
+                        price: art.price,
+                        shipping_cost: art.shipping_cost || 0,
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        setActiveArtwork(art);
+                        setShowOfferModal(true);
+                      }}
+                      className="mt-2 text-sm underline text-blue-600 hover:text-blue-800"
+                    >
+                      Make an Offer
+                    </button>
+                  </>
                 ) : (
-                  <p className="text-red-500 text-sm mt-2 font-semibold">Sold</p>
+                  <>
+                    <p className="text-red-500 text-sm mt-2 font-semibold">Sold</p>
+                    <button
+                      disabled
+                      className="mt-2 text-sm underline text-gray-400 cursor-not-allowed"
+                    >
+                      Make an Offer
+                    </button>
+                  </>
                 )}
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Offer Modal */}
+      {activeArtwork && (
+        <OfferModal
+          isOpen={showOfferModal}
+          onClose={() => {
+            setShowOfferModal(false);
+            setActiveArtwork(null);
+          }}
+          artistId={id as string}
+          artworkId={activeArtwork.id}
+          artworkTitle={activeArtwork.title}
+          price={activeArtwork.price}
+        />
+      )}
     </>
   );
 }
