@@ -29,50 +29,58 @@ export default function Inbox() {
 
   useEffect(() => {
     const loadInbox = async () => {
-      setLoading(true);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          id,
-          message,
-          created_at,
-          buyer_id,
-          sender_id,
-          artwork_id,
-          profiles!buyer_id (username),
-          artworks ( title, artist_id )
-        `)
-        .or(`sender_id.eq.${user.id},artworks.artist_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Failed to load messages:', error.message);
-        return;
-      }
-
-      const map = new Map<string, Thread>();
-
-      (data ?? []).forEach((msg: SupabaseMessageRow) => {
-        const key = `${msg.artwork_id}_${msg.buyer_id}`;
-        if (!map.has(key)) {
-          map.set(key, {
-            artwork_id: msg.artwork_id,
-            buyer_id: msg.buyer_id,
-            latest_message: msg.message,
-            updated_at: msg.created_at,
-            artwork_title: msg.artworks?.[0]?.title ?? 'Untitled',
-            buyer_username: msg.profiles?.[0]?.username ?? 'Unknown',
-          });
+        setLoading(true);
+      
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+      
+        const { data, error } = await supabase
+          .from('messages')
+          .select(`
+            id,
+            message,
+            created_at,
+            buyer_id,
+            sender_id,
+            artwork_id,
+            profiles!buyer_id (username),
+            artworks ( title, artist_id )
+          `)
+          .order('created_at', { ascending: false });
+      
+        if (error) {
+          console.error('Failed to load messages:', error.message);
+          return;
         }
-      });
-
-      setThreads(Array.from(map.values()));
-      setLoading(false);
-    };
+      
+        const filtered = (data ?? []).filter((msg: any) => {
+          return (
+            msg.sender_id === user.id ||
+            msg.artworks?.[0]?.artist_id === user.id
+          );
+        });
+      
+        const map = new Map<string, Thread>();
+        filtered.forEach((msg: SupabaseMessageRow) => {
+          const key = `${msg.artwork_id}_${msg.buyer_id}`;
+          if (!map.has(key)) {
+            map.set(key, {
+              artwork_id: msg.artwork_id,
+              buyer_id: msg.buyer_id,
+              latest_message: msg.message,
+              updated_at: msg.created_at,
+              artwork_title: msg.artworks?.[0]?.title ?? 'Untitled',
+              buyer_username: msg.profiles?.[0]?.username ?? 'Unknown',
+            });
+          }
+        });
+      
+        setThreads(Array.from(map.values()));
+        setLoading(false);
+      };
+      
 
     loadInbox();
   }, []);
