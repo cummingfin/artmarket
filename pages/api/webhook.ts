@@ -67,10 +67,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).send('Failed to fetch artwork data');
     }
 
-    // 3. Calculate 8% service fee
+    // ✅ 3. Calculate correct service fee and earnings
     const serviceFee = parseFloat((artwork.price * 0.08).toFixed(2));
     const artistEarnings = parseFloat(
-      (artwork.price + artwork.shipping_cost - serviceFee).toFixed(2)
+      ((artwork.price - serviceFee) + artwork.shipping_cost).toFixed(2)
     );
 
     // 4. Insert order
