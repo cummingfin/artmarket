@@ -20,6 +20,7 @@ interface Artwork {
   image_url: string;
   style?: string;
   sold?: boolean;
+  shipping_cost?: number;
 }
 
 export default function ProfilePage() {
@@ -46,7 +47,7 @@ export default function ProfilePage() {
 
       const { data: artworkData, error: artworkError } = await supabase
         .from('artworks')
-        .select('*')
+        .select('id, title, description, price, image_url, style, sold, shipping_cost')
         .eq('artist_id', id)
         .order('created_at', { ascending: false });
 
@@ -99,9 +100,19 @@ export default function ProfilePage() {
                 <h3 className="text-lg font-semibold">{art.title}</h3>
                 <p className="text-sm text-gray-600">{art.description}</p>
                 <p className="text-sm font-medium mt-1">Price: £{art.price}</p>
+                {art.shipping_cost !== undefined && (
+                  <p className="text-sm text-gray-500 mb-1">
+                    + £{art.shipping_cost} shipping
+                  </p>
+                )}
                 {!art.sold ? (
                   <BuyButton
-                    artwork={{ id: art.id, title: art.title, price: art.price }}
+                    artwork={{
+                      id: art.id,
+                      title: art.title,
+                      price: art.price,
+                      shipping_cost: art.shipping_cost || 0,
+                    }}
                   />
                 ) : (
                   <p className="text-red-500 text-sm mt-2 font-semibold">Sold</p>

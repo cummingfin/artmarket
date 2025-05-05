@@ -13,6 +13,7 @@ type Artwork = {
   image_url: string;
   style?: string;
   sold?: boolean;
+  shipping_cost?: number;
   artist_id?: string;
   profiles?: {
     id: string;
@@ -32,14 +33,19 @@ export default function ArtworkDetail() {
     const fetchArtwork = async () => {
       const { data, error } = await supabase
         .from('artworks')
-        .select('*, profiles ( id, username )')
+        .select('id, title, description, price, image_url, style, sold, shipping_cost, profiles ( id, username )')
         .eq('id', id)
         .maybeSingle();
 
-      if (!error) {
-        setArtwork(data);
+      if (!error && data) {
+        // Flatten profile if needed (some Supabase versions may return as array)
+        const formatted = {
+          ...data,
+          profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
+        };
+        setArtwork(formatted);
       } else {
-        console.error('Error fetching artwork:', error.message);
+        console.error('Error fetching artwork:', error?.message);
       }
     };
 
@@ -76,11 +82,21 @@ export default function ArtworkDetail() {
         )}
 
         <p className="font-semibold mb-2">Style: {artwork.style}</p>
-        <p className="font-semibold mb-6 text-lg">Price: £{artwork.price}</p>
+        <p className="font-semibold mb-1">Price: £{artwork.price}</p>
+        {artwork.shipping_cost !== undefined && (
+          <p className="text-sm text-gray-600 mb-6">
+            + £{artwork.shipping_cost} shipping
+          </p>
+        )}
 
         {!artwork.sold ? (
           <BuyButton
-            artwork={{ id: artwork.id, title: artwork.title, price: artwork.price }}
+            artwork={{
+              id: artwork.id,
+              title: artwork.title,
+              price: artwork.price,
+              shipping_cost: artwork.shipping_cost || 0,
+            }}
           />
         ) : (
           <p className="text-red-500 font-semibold text-sm">Sold</p>

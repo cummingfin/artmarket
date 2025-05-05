@@ -1,14 +1,12 @@
 // components/BuyButton.tsx
-import { loadStripe } from '@stripe/stripe-js';
 import { useState } from 'react';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 type BuyButtonProps = {
   artwork: {
     id: number | string;
     title: string;
     price: number;
+    shipping_cost: number;
   };
 };
 
@@ -24,15 +22,17 @@ export default function BuyButton({ artwork }: BuyButtonProps) {
         body: JSON.stringify({
           title: artwork.title,
           price: artwork.price,
+          shippingCost: artwork.shipping_cost,
           artworkId: artwork.id,
         }),
       });
 
       const data = await res.json();
-      const stripe = await stripePromise;
-      if (stripe) {
-        await stripe.redirectToCheckout({ sessionId: data.sessionId });
 
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Checkout error:', data.error);
       }
     } catch (err) {
       console.error('Checkout failed:', err);

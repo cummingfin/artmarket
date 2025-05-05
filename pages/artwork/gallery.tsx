@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import BuyButton from '@/components/BuyButton';
 
+// ...unchanged imports
 interface Artwork {
   id: string;
   title: string;
@@ -12,6 +13,7 @@ interface Artwork {
   image_url: string;
   style?: string;
   sold?: boolean;
+  shipping_cost: number; // ✅ Added
   profiles?: {
     id: string;
     username: string;
@@ -28,15 +30,23 @@ export default function Gallery() {
     const fetchArtworks = async () => {
       const { data, error } = await supabase
         .from('artworks')
-        .select('*, profiles ( id, username )')
+        .select('id, title, description, price, image_url, style, sold, shipping_cost, profiles ( id, username )')
         .order('created_at', { ascending: false });
-
-      if (!error) {
-        setArtworks(data || []);
-        setFiltered(data || []);
+  
+      if (!error && data) {
+        // Flatten the nested profiles array (Supabase may return it as an array)
+        const formatted = data.map((art) => ({
+          ...art,
+          profiles: Array.isArray(art.profiles) ? art.profiles[0] : art.profiles,
+        }));
+  
+        setArtworks(formatted);
+        setFiltered(formatted);
+      } else if (error) {
+        console.error('Error fetching artworks:', error.message);
       }
     };
-
+  
     fetchArtworks();
   }, []);
 
@@ -127,11 +137,17 @@ export default function Gallery() {
                   )}
 
                   <p className="text-sm font-medium">Style: {art.style}</p>
-                  <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
+                  <p className="text-sm font-medium">Price: £{art.price}</p>
+                  <p className="text-sm font-medium mb-2">Shipping: £{art.shipping_cost}</p>
 
                   {!art.sold ? (
                     <BuyButton
-                      artwork={{ id: art.id, title: art.title, price: art.price }}
+                      artwork={{
+                        id: art.id,
+                        title: art.title,
+                        price: art.price,
+                        shipping_cost: art.shipping_cost,
+                      }}
                     />
                   ) : (
                     <p className="text-red-500 font-semibold text-sm mt-2">Sold</p>
