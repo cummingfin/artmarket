@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import BuyButton from '@/components/BuyButton';
 
 interface Artwork {
   id: string;
@@ -10,6 +11,7 @@ interface Artwork {
   price: number;
   image_url: string;
   style?: string;
+  sold?: boolean;
   profiles?: {
     id: string;
     username: string;
@@ -55,19 +57,6 @@ export default function Gallery() {
 
     setFiltered(filteredData);
   }, [priceFilter, styleFilter, artworks]);
-
-  const handleBuy = async (title: string, price: number) => {
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, price }),
-    });
-
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    }
-  };
 
   return (
     <>
@@ -140,12 +129,13 @@ export default function Gallery() {
                   <p className="text-sm font-medium">Style: {art.style}</p>
                   <p className="text-sm font-medium mb-2">Price: £{art.price}</p>
 
-                  <button
-                    className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 mt-2 w-full"
-                    onClick={() => handleBuy(art.title, art.price)}
-                  >
-                    Buy Now
-                  </button>
+                  {!art.sold ? (
+                    <BuyButton
+                      artwork={{ id: art.id, title: art.title, price: art.price }}
+                    />
+                  ) : (
+                    <p className="text-red-500 font-semibold text-sm mt-2">Sold</p>
+                  )}
                 </div>
               ))}
             </div>

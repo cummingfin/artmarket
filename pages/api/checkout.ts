@@ -5,7 +5,7 @@ import stripe from '../../lib/stripe'; // use relative path
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { title, price } = req.body;
+  const { title, price, artworkId } = req.body;
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -21,11 +21,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           quantity: 1,
         },
       ],
+      metadata: {
+        artworkId: String(artworkId), // important: ensure it's a string
+      },
       success_url: `${req.headers.origin}/success`,
       cancel_url: `${req.headers.origin}/artwork/gallery`,
     });
 
-    res.status(200).json({ url: session.url });
+    res.status(200).json({ sessionId: session.id });
   } catch (err: unknown) {
     if (err instanceof Error) {
       res.status(500).json({ error: err.message });

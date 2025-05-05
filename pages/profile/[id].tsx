@@ -1,9 +1,9 @@
-// pages/profile/[id].tsx
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import BuyButton from '@/components/BuyButton';
 
 interface Profile {
   id: string;
@@ -19,6 +19,7 @@ interface Artwork {
   price: number;
   image_url: string;
   style?: string;
+  sold?: boolean;
 }
 
 export default function ProfilePage() {
@@ -85,22 +86,27 @@ export default function ProfilePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {artworks.map((art) => (
-              <Link
-                key={art.id}
-                href={`/artwork/${art.id}`}
-                className="border p-4 rounded hover:shadow transition"
-              >
-                <div className="w-full aspect-square overflow-hidden mb-4 border">
-                  <img
-                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
-                    alt={art.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+              <div key={art.id} className="border p-4 rounded hover:shadow transition">
+                <Link href={`/artwork/${art.id}`}>
+                  <div className="w-full aspect-square overflow-hidden mb-4 border cursor-pointer">
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${art.image_url}`}
+                      alt={art.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </Link>
                 <h3 className="text-lg font-semibold">{art.title}</h3>
                 <p className="text-sm text-gray-600">{art.description}</p>
                 <p className="text-sm font-medium mt-1">Price: £{art.price}</p>
-              </Link>
+                {!art.sold ? (
+                  <BuyButton
+                    artwork={{ id: art.id, title: art.title, price: art.price }}
+                  />
+                ) : (
+                  <p className="text-red-500 text-sm mt-2 font-semibold">Sold</p>
+                )}
+              </div>
             ))}
           </div>
         )}

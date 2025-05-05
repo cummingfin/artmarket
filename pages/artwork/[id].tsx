@@ -1,9 +1,9 @@
-// pages/artwork/[id].tsx
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import BuyButton from '@/components/BuyButton';
 
 type Artwork = {
   id: string;
@@ -12,6 +12,7 @@ type Artwork = {
   price: number;
   image_url: string;
   style?: string;
+  sold?: boolean;
   artist_id?: string;
   profiles?: {
     id: string;
@@ -62,7 +63,6 @@ export default function ArtworkDetail() {
         <h1 className="text-3xl font-bold mb-2">{artwork.title}</h1>
         <p className="text-gray-700 mb-2">{artwork.description}</p>
 
-        {/* 👤 Artist info with link */}
         {artwork.profiles && (
           <p className="text-sm text-gray-500 mb-2">
             by{' '}
@@ -78,14 +78,13 @@ export default function ArtworkDetail() {
         <p className="font-semibold mb-2">Style: {artwork.style}</p>
         <p className="font-semibold mb-6 text-lg">Price: £{artwork.price}</p>
 
-        <button
-          className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800"
-          onClick={() => {
-            alert('Checkout coming soon!');
-          }}
-        >
-          Buy Now
-        </button>
+        {!artwork.sold ? (
+          <BuyButton
+            artwork={{ id: artwork.id, title: artwork.title, price: artwork.price }}
+          />
+        ) : (
+          <p className="text-red-500 font-semibold text-sm">Sold</p>
+        )}
       </div>
     </>
   );
