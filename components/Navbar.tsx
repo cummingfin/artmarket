@@ -115,6 +115,12 @@ export default function Navbar() {
                 >
                   Sold Artwork
                 </button>
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => router.push('/inbox')}
+                >
+                  Inbox
+                </button>
                 <hr />
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
@@ -124,6 +130,7 @@ export default function Navbar() {
                 </button>
               </div>
             )}
+
           </div>
         ) : (
           <>
