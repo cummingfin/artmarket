@@ -39,19 +39,20 @@ export default function Inbox() {
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          id,
-          message,
-          created_at,
-          receiver_id,
-          sender_id,
-          artwork_id,
-          receiver:receiver_id (username),
-          sender:sender_id (username),
-          artworks ( title, artist_id )
-        `)
-        .order('created_at', { ascending: false });
+  .from('messages')
+  .select(`
+    id,
+    message,
+    created_at,
+    receiver_id,
+    sender_id,
+    artwork_id,
+    receiver:receiver_id ( username ),
+    sender:sender_id ( username ),
+    artworks ( title, artist_id )
+  `)
+  .order('created_at', { ascending: false });
+
 
       if (error) {
         console.error('Failed to load messages:', error.message);
