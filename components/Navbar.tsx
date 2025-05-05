@@ -51,7 +51,7 @@ export default function Navbar() {
           <img
             src="/logo.svg"
             alt="Recanvased logo"
-            className="w-10 h-10 object-contain"
+            className="w-20 h-auto object-contain"
           />
           <span className="sr-only">Home</span>
         </Link>
