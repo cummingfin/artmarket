@@ -80,7 +80,7 @@ export default function Inbox() {
   return (
     <>
       <Navbar />
-      <div className="p-6 max-w-3xl mx-auto text-black">
+      <div className="p-6 max-w-3xl mx-auto text-black bg-white min-h-screen">
         <h1 className="text-2xl font-bold mb-6">Inbox</h1>
 
         {loading ? (
