@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/router';
+import { useMemo } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
 export default function Navbar() {
@@ -43,16 +44,21 @@ export default function Navbar() {
     router.push('/');
   };
 
+
+  const logos = ['/logo1.svg', '/logo2.svg', '/logo3.svg'];
+  const randomLogo = useMemo(() => logos[Math.floor(Math.random() * logos.length)], []);
+
+
   return (
     <nav className="flex flex-col md:flex-row items-center justify-between px-6 py-4 border-b bg-white text-black shadow-sm">
       {/* Logo */}
       <div className="flex items-center gap-3 text-xl font-bold mb-2 md:mb-0">
         <Link href="/" className="flex items-center gap-2">
-          <img
-            src="/logo.svg"
-            alt="Recanvased logo"
-            className="w-60 h-auto object-contain"
-          />
+        <img
+          src={randomLogo}
+          alt="Recanvased logo"
+          className="w-20 h-auto object-contain"
+        />
           <span className="sr-only">Home</span>
         </Link>
       </div>
