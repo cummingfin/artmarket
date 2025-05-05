@@ -41,52 +41,67 @@ export default function MessageThread() {
   }, [artworkId]);
 
   const handleSend = async () => {
-    if (!userId || !content.trim()) return;
-
-    let recipient_id: string | null = null;
-
-if (messages.length > 0) {
-  const lastMessage = messages[messages.length - 1];
-  recipient_id = lastMessage.sender_id !== userId ? lastMessage.sender_id : lastMessage.recipient_id;
-} else {
-  // No messages yet — determine recipient based on artwork
-  const { data: artwork, error: artworkError } = await supabase
-    .from('artworks')
-    .select('artist_id')
-    .eq('id', artworkId)
-    .maybeSingle();
-
-  if (artworkError || !artwork) {
-    console.error('❌ Failed to fetch artwork info:', artworkError?.message);
-    return;
-  }
-
-  // If current user is the artist, recipient is buyer (you may want to get buyer from order later)
-  recipient_id = artwork.artist_id === userId ? null : artwork.artist_id;
-}
-
-
-    const { error } = await supabase.from('messages').insert([
-      {
-        artwork_id: artworkId,
-        sender_id: userId,
-        recipient_id,
-        content,
-      },
-    ]);
-
-    if (!error) {
-      setContent('');
-      // Refresh messages
-      const { data } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('artwork_id', artworkId)
-        .order('created_at', { ascending: true });
-
-      setMessages(data || []);
+    if (!userId || !content.trim() || typeof artworkId !== 'string') {
+      console.warn('🚫 Invalid user or message content or artworkId.');
+      return;
     }
+  
+    let recipient_id: string | null = null;
+  
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      recipient_id = lastMessage.sender_id !== userId
+        ? lastMessage.sender_id
+        : lastMessage.recipient_id;
+    } else {
+      // No messages yet — determine recipient based on artwork
+      const { data: artwork, error: artworkError } = await supabase
+        .from('artworks')
+        .select('artist_id')
+        .eq('id', artworkId)
+        .maybeSingle();
+  
+      if (artworkError || !artwork) {
+        console.error('❌ Failed to fetch artwork info:', artworkError?.message);
+        return;
+      }
+  
+      if (artwork.artist_id === userId) {
+        console.warn('⚠️ Sender is the artist — no recipient to message.');
+        return; // Or set recipient_id to known buyer if testing
+      } else {
+        recipient_id = artwork.artist_id;
+      }
+    }
+  
+    const payload = {
+      artwork_id: artworkId,
+      sender_id: userId,
+      recipient_id,
+      content,
+    };
+  
+    console.log('📨 Sending message with payload:', payload);
+  
+    const { error } = await supabase.from('messages').insert([payload]);
+  
+    if (error) {
+      console.error('❌ Supabase insert error:', error);
+      return;
+    }
+  
+    setContent('');
+  
+    // Refresh messages
+    const { data } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('artwork_id', artworkId)
+      .order('created_at', { ascending: true });
+  
+    setMessages(data || []);
   };
+  
 
   return (
     <>
