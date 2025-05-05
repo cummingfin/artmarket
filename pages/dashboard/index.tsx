@@ -7,6 +7,8 @@ export default function Dashboard() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [style, setStyle] = useState('');
+  const [widthCm, setWidthCm] = useState('');
+  const [heightCm, setHeightCm] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [message, setMessage] = useState('');
@@ -55,10 +57,13 @@ export default function Dashboard() {
       {
         title,
         description,
-        price,
+        price: parseFloat(price),
         style,
+        width_cm: parseFloat(widthCm),
+        height_cm: parseFloat(heightCm),
         image_url: storageData?.path,
         artist_id: user.id,
+        sold: false,
       },
     ]);
 
@@ -70,6 +75,8 @@ export default function Dashboard() {
       setDescription('');
       setPrice('');
       setStyle('');
+      setWidthCm('');
+      setHeightCm('');
       setImageFile(null);
       setPreviewUrl('');
     }
@@ -104,6 +111,24 @@ export default function Dashboard() {
               placeholder="Price (£)"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
+              required
+            />
+            <input
+              className="border border-black p-2 w-full rounded text-black"
+              type="number"
+              step="0.1"
+              placeholder="Width (cm)"
+              value={widthCm}
+              onChange={(e) => setWidthCm(e.target.value)}
+              required
+            />
+            <input
+              className="border border-black p-2 w-full rounded text-black"
+              type="number"
+              step="0.1"
+              placeholder="Height (cm)"
+              value={heightCm}
+              onChange={(e) => setHeightCm(e.target.value)}
               required
             />
             <select
