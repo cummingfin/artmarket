@@ -28,9 +28,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const buf = await buffer(req);
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
-  } catch (err: any) {
-    console.error('⚠️ Webhook signature verification failed.', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+} catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error('⚠️ Webhook signature verification failed.', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    } else {
+      return res.status(400).send('Webhook Error: Unknown error');
+    }
   }
 
   // Handle the checkout session completed event
