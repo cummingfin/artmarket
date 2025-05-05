@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
@@ -13,10 +12,20 @@ type Thread = {
   buyer_username: string;
 };
 
+type SupabaseMessageRow = {
+  id: string;
+  message: string;
+  created_at: string;
+  buyer_id: string;
+  sender_id: string;
+  artwork_id: string;
+  profiles?: { username: string }[];  // Array because of Supabase join
+  artworks?: { title: string; artist_id: string }[];  // Same here
+};
+
 export default function Inbox() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const loadInbox = async () => {
@@ -25,7 +34,6 @@ export default function Inbox() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch messages where current user is artist or buyer
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -46,9 +54,9 @@ export default function Inbox() {
         return;
       }
 
-      // Group by artwork_id + buyer_id
       const map = new Map<string, Thread>();
-      data.forEach((msg: any) => {
+
+      (data ?? []).forEach((msg: SupabaseMessageRow) => {
         const key = `${msg.artwork_id}_${msg.buyer_id}`;
         if (!map.has(key)) {
           map.set(key, {
@@ -56,8 +64,8 @@ export default function Inbox() {
             buyer_id: msg.buyer_id,
             latest_message: msg.message,
             updated_at: msg.created_at,
-            artwork_title: msg.artworks?.title ?? 'Untitled',
-            buyer_username: msg.profiles?.username ?? 'Unknown',
+            artwork_title: msg.artworks?.[0]?.title ?? 'Untitled',
+            buyer_username: msg.profiles?.[0]?.username ?? 'Unknown',
           });
         }
       });
