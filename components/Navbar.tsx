@@ -57,7 +57,7 @@ export default function Navbar() {
         <img
           src={randomLogo}
           alt="Recanvased logo"
-          className="w-20 h-auto object-contain"
+          className="w-70 h-auto object-contain"
         />
           <span className="sr-only">Home</span>
         </Link>
