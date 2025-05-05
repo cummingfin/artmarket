@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar';
 type Message = {
   id: string;
   sender_id: string;
-  recipient_id: string;
+  receiver_id: string;
   content: string;
   created_at: string;
 };
@@ -42,51 +42,52 @@ export default function MessageThread() {
 
   const handleSend = async () => {
     if (!userId || !content.trim()) return;
-
+  
     let receiver_id: string | null = null;
-
-if (messages.length > 0) {
-  const lastMessage = messages[messages.length - 1];
-  receiver_id = lastMessage.sender_id !== userId ? lastMessage.sender_id : lastMessage.recipient_id;
-} else {
-  // No messages yet — determine recipient based on artwork
-  const { data: artwork, error: artworkError } = await supabase
-    .from('artworks')
-    .select('artist_id')
-    .eq('id', artworkId)
-    .maybeSingle();
-
-  if (artworkError || !artwork) {
-    console.error('❌ Failed to fetch artwork info:', artworkError?.message);
-    return;
-  }
-
-  // If current user is the artist, recipient is buyer (you may want to get buyer from order later)
-  receiver_id = artwork.artist_id === userId ? null : artwork.artist_id;
-}
-
-
-    const { error } = await supabase.from('messages').insert([
-      {
-        artwork_id: artworkId,
-        sender_id: userId,
-        receiver_id,
-        content,
-      },
-    ]);
-
-    if (!error) {
+  
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      receiver_id = lastMessage.sender_id !== userId ? lastMessage.sender_id : lastMessage.receiver_id;
+    } else {
+      const { data: artwork, error: artworkError } = await supabase
+        .from('artworks')
+        .select('artist_id')
+        .eq('id', artworkId)
+        .maybeSingle();
+  
+      if (artworkError || !artwork) {
+        console.error('❌ Failed to fetch artwork info:', artworkError?.message);
+        return;
+      }
+  
+      receiver_id = artwork.artist_id === userId ? null : artwork.artist_id;
+    }
+  
+    const messagePayload = {
+      artwork_id: artworkId,
+      sender_id: userId,
+      receiver_id,
+      content,
+    };
+  
+    console.log('📤 Sending message payload:', messagePayload);
+  
+    const { error } = await supabase.from('messages').insert([messagePayload]);
+  
+    if (error) {
+      console.error('❌ Supabase insert error:', error);
+    } else {
       setContent('');
-      // Refresh messages
       const { data } = await supabase
         .from('messages')
         .select('*')
         .eq('artwork_id', artworkId)
         .order('created_at', { ascending: true });
-
+  
       setMessages(data || []);
     }
   };
+  
 
   return (
     <>
