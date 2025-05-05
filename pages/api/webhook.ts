@@ -3,7 +3,6 @@ import Stripe from 'stripe';
 import { buffer } from 'micro';
 import supabaseAdmin from '@/lib/supabaseAdmin';
 
-// Disable body parsing so we can verify the Stripe signature
 export const config = {
   api: {
     bodyParser: false,
@@ -29,35 +28,69 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const buf = await buffer(req);
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
   } catch (err: unknown) {
-    if (err instanceof Error) {
-      console.error('⚠️ Webhook signature verification failed.', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    } else {
-      return res.status(400).send('Webhook Error: Unknown error');
-    }
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('⚠️ Webhook signature verification failed:', message);
+    return res.status(400).send(`Webhook Error: ${message}`);
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const artworkId = session?.metadata?.artworkId;
+    const address = session?.customer_details?.address;
+    const email = session?.customer_details?.email;
 
-    if (artworkId) {
-      const { error } = await supabaseAdmin
-        .from('artworks')
-        .update({ sold: true })
-        .eq('id', artworkId);
-
-      if (error) {
-        console.error('❌ Failed to update artwork:', error.message);
-        return res.status(500).send('Failed to update artwork status');
-      }
-
-      console.log(`✅ Artwork ${artworkId} marked as sold`);
-    } else {
-      console.warn('⚠️ No artworkId found in session metadata');
+    if (!artworkId) {
+      console.warn('⚠️ No artworkId in session metadata');
+      return res.status(200).send('No artworkId provided');
     }
+
+    // 1. Mark artwork as sold
+    const { error: updateError } = await supabaseAdmin
+      .from('artworks')
+      .update({ sold: true })
+      .eq('id', artworkId);
+
+    if (updateError) {
+      console.error('❌ Failed to mark artwork as sold:', updateError.message);
+      return res.status(500).send('Failed to update artwork');
+    }
+
+    // 2. Fetch price + shipping
+    const { data: artwork, error: fetchError } = await supabaseAdmin
+      .from('artworks')
+      .select('price, shipping_cost')
+      .eq('id', artworkId)
+      .maybeSingle();
+
+    if (fetchError || !artwork) {
+      console.error('❌ Failed to fetch artwork:', fetchError?.message);
+      return res.status(500).send('Failed to fetch artwork data');
+    }
+
+    // 3. Calculate 8% service fee
+    const serviceFee = parseFloat((artwork.price * 0.08).toFixed(2));
+    const artistEarnings = parseFloat(
+      (artwork.price + artwork.shipping_cost - serviceFee).toFixed(2)
+    );
+
+    // 4. Insert order
+    const { error: orderError } = await supabaseAdmin.from('orders').insert([
+      {
+        artwork_id: artworkId,
+        buyer_email: email,
+        shipping_address: address,
+        service_fee: serviceFee,
+        artist_earnings: artistEarnings,
+      },
+    ]);
+
+    if (orderError) {
+      console.error('❌ Failed to insert order:', orderError.message);
+      return res.status(500).send('Failed to save order');
+    }
+
+    console.log(`✅ Artwork ${artworkId} marked sold. Order stored.`);
   }
 
-  return res.status(200).json({ received: true });
+  res.status(200).json({ received: true });
 }
-

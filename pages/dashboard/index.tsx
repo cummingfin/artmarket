@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [style, setStyle] = useState('');
   const [widthCm, setWidthCm] = useState('');
   const [heightCm, setHeightCm] = useState('');
+  const [shippingCost, setShippingCost] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [message, setMessage] = useState('');
@@ -58,6 +59,7 @@ export default function Dashboard() {
         title,
         description,
         price: parseFloat(price),
+        shipping_cost: parseFloat(shippingCost),
         style,
         width_cm: parseFloat(widthCm),
         height_cm: parseFloat(heightCm),
@@ -74,6 +76,7 @@ export default function Dashboard() {
       setTitle('');
       setDescription('');
       setPrice('');
+      setShippingCost('');
       setStyle('');
       setWidthCm('');
       setHeightCm('');
@@ -111,6 +114,14 @@ export default function Dashboard() {
               placeholder="Price (£)"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
+              required
+            />
+            <input
+              className="border border-black p-2 w-full rounded text-black"
+              type="number"
+              placeholder="Shipping Cost (£)"
+              value={shippingCost}
+              onChange={(e) => setShippingCost(e.target.value)}
               required
             />
             <input
