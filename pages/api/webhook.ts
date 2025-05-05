@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import { buffer } from 'micro';
-import { supabase } from '@/lib/supabaseClient';
+import supabaseAdmin from '@/lib/supabaseAdmin';
 
-// Disable body parsing so we can verify the signature
+// Disable body parsing so we can verify the Stripe signature
 export const config = {
   api: {
     bodyParser: false,
@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const buf = await buffer(req);
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
-} catch (err: unknown) {
+  } catch (err: unknown) {
     if (err instanceof Error) {
       console.error('⚠️ Webhook signature verification failed.', err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -37,15 +37,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  // Handle the checkout session completed event
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
-
-    // We passed artworkId in success_url, so it should be in metadata or client_reference_id
     const artworkId = session?.metadata?.artworkId;
 
     if (artworkId) {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('artworks')
         .update({ sold: true })
         .eq('id', artworkId);
@@ -57,9 +54,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       console.log(`✅ Artwork ${artworkId} marked as sold`);
     } else {
-      console.warn('⚠️ No artworkId provided in session');
+      console.warn('⚠️ No artworkId found in session metadata');
     }
   }
 
-  res.status(200).json({ received: true });
+  return res.status(200).json({ received: true });
 }
+
