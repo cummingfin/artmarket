@@ -12,25 +12,6 @@ type Thread = {
   buyer_username: string;
 };
 
-type RawMessage = {
-  id: string;
-  content: string;
-  created_at: string;
-  sender_id: string;
-  receiver_id: string;
-  artwork_id: string;
-};
-
-type Artwork = {
-  id: string;
-  title: string;
-  artist_id: string;
-};
-
-type Profile = {
-  id: string;
-  username: string;
-};
 
 export default function Inbox() {
   const [threads, setThreads] = useState<Thread[]>([]);
