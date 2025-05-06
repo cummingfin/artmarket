@@ -4,13 +4,26 @@ import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 
+type Profile = {
+  username: string;
+};
+
 type Message = {
   id: string;
   content: string;
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  sender: { username: string };
+  sender: Profile;
+};
+
+type SupabaseMessage = {
+  id: string;
+  content: string;
+  created_at: string;
+  sender_id: string;
+  receiver_id: string;
+  sender: Profile[]; // Supabase returns joined results as arrays
 };
 
 type Artwork = {
@@ -36,7 +49,6 @@ export default function MessageThread() {
 
       if (!artworkId || !otherUserId || !currentUser) return;
 
-      // Fetch messages with sender's username
       const { data: messageData } = await supabase
         .from('messages')
         .select(`
@@ -52,15 +64,13 @@ export default function MessageThread() {
         .order('created_at');
 
       if (messageData) {
-        setMessages(
-          messageData.map((msg: any) => ({
-            ...msg,
-            sender: msg.sender?.[0] ?? { username: 'Unknown' }
-          }))
-        );
+        const typedMessages = (messageData as SupabaseMessage[]).map((msg) => ({
+          ...msg,
+          sender: msg.sender[0] ?? { username: 'Unknown' },
+        }));
+        setMessages(typedMessages);
       }
 
-      // Get artwork
       const { data: art } = await supabase
         .from('artworks')
         .select('title, image_url')
@@ -69,7 +79,6 @@ export default function MessageThread() {
 
       if (art) setArtwork(art);
 
-      // Get other user's name
       const { data: userProfile } = await supabase
         .from('profiles')
         .select('username')
@@ -90,13 +99,12 @@ export default function MessageThread() {
         artwork_id: artworkId,
         sender_id: userId,
         receiver_id: otherUserId,
-        content
-      }
+        content,
+      },
     ]);
 
     if (!error) {
       setContent('');
-      // Re-fetch
       const { data: updatedMessages } = await supabase
         .from('messages')
         .select(`
@@ -112,12 +120,11 @@ export default function MessageThread() {
         .order('created_at');
 
       if (updatedMessages) {
-        setMessages(
-          updatedMessages.map((msg: any) => ({
-            ...msg,
-            sender: msg.sender?.[0] ?? { username: 'Unknown' }
-          }))
-        );
+        const typedMessages = (updatedMessages as SupabaseMessage[]).map((msg) => ({
+          ...msg,
+          sender: msg.sender[0] ?? { username: 'Unknown' },
+        }));
+        setMessages(typedMessages);
       }
     }
   };
@@ -129,10 +136,16 @@ export default function MessageThread() {
         <h1 className="text-2xl font-bold mb-2">
           Chat about: <em>{artwork?.title ?? 'Untitled'}</em>
         </h1>
-        <p className="text-sm mb-4 text-gray-500">Talking with: <strong>{otherUsername}</strong></p>
+        <p className="text-sm mb-4 text-gray-500">
+          Talking with: <strong>{otherUsername}</strong>
+        </p>
 
         {artwork?.image_url && (
-          <img src={artwork.image_url} alt={artwork.title} className="w-full max-h-60 object-cover rounded mb-4" />
+          <img
+            src={artwork.image_url}
+            alt={artwork.title}
+            className="w-full max-h-60 object-cover rounded mb-4"
+          />
         )}
 
         <div className="space-y-3 mb-4">
@@ -143,7 +156,7 @@ export default function MessageThread() {
                 msg.sender_id === userId ? 'bg-blue-100 ml-auto text-right' : 'bg-gray-200'
               }`}
             >
-              <p className="text-sm font-semibold">{msg.sender?.username ?? 'Unknown'}</p>
+              <p className="text-sm font-semibold">{msg.sender.username}</p>
               <p className="text-sm">{msg.content}</p>
               <p className="text-xs text-gray-500">{new Date(msg.created_at).toLocaleString()}</p>
             </div>
