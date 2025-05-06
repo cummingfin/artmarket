@@ -96,40 +96,44 @@ export default function Navbar() {
               Profile
             </button>
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded shadow text-sm z-10">
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  onClick={() => router.push('/profile')}
-                >
-                  Edit Profile
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  onClick={() => router.push('/orders')}
-                >
-                  Orders
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  onClick={() => router.push('/sold')}
-                >
-                  Sold Artwork
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  onClick={() => router.push('/inbox')}
-                >
-                  Inbox
-                </button>
-                <hr />
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </div>
-            )}
+  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded shadow text-sm z-10">
+    <button
+      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+      onClick={() => router.push('/profile')}
+    >
+      Edit Profile
+    </button>
+    <button
+      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+      onClick={() => router.push('/orders')}
+    >
+      Orders
+    </button>
+    <button
+      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+      onClick={() => router.push('/sold')}
+    >
+      Sold Artwork
+    </button>
+
+    {/* ✅ Add Inbox */}
+    <button
+      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+      onClick={() => router.push('/inbox')}
+    >
+      Inbox
+    </button>
+
+    <hr />
+    <button
+      className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+      onClick={handleLogout}
+    >
+      Logout
+    </button>
+  </div>
+)}
+
 
           </div>
         ) : (

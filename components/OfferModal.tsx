@@ -58,7 +58,7 @@ export default function OfferModal({ isOpen, onClose, artistId, artworkId, artwo
       return;
     }
 
-    router.push(`/messages/${artistId}?artworkId=${artworkId}`);
+    router.push(`/messages/${artworkId}/${artistId}`);
   };
 
   return (
