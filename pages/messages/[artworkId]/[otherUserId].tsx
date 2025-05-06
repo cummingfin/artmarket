@@ -1,3 +1,4 @@
+// pages/messages/[artworkId]/[otherUserId].tsx
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabaseClient';
@@ -9,13 +10,10 @@ type Message = {
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  sender?: { username: string }[];   // ✅ make it an array
-  receiver?: { username: string }[];
-  artworks?: { title: string; image_url: string }[];
+  sender: { username: string };
 };
 
-
-type ArtworkInfo = {
+type Artwork = {
   title: string;
   image_url: string;
 };
@@ -27,15 +25,19 @@ export default function MessageThread() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
-  const [artwork, setArtwork] = useState<ArtworkInfo | null>(null);
+  const [artwork, setArtwork] = useState<Artwork | null>(null);
+  const [otherUsername, setOtherUsername] = useState<string>('User');
 
   useEffect(() => {
-    const fetchData = async () => {
+    const load = async () => {
       const { data: session } = await supabase.auth.getSession();
       const currentUser = session.session?.user.id;
       setUserId(currentUser || null);
 
-      const { data, error } = await supabase
+      if (!artworkId || !otherUserId || !currentUser) return;
+
+      // Fetch messages with sender's username
+      const { data: messageData } = await supabase
         .from('messages')
         .select(`
           id,
@@ -45,26 +47,39 @@ export default function MessageThread() {
           receiver_id,
           sender:sender_id (username)
         `)
-        .or(`sender_id.eq.${currentUser},receiver_id.eq.${currentUser}`)
         .eq('artwork_id', artworkId)
-        .order('created_at', { ascending: true });
+        .or(`sender_id.eq.${currentUser},receiver_id.eq.${currentUser}`)
+        .order('created_at');
 
-      if (!error) {
-        setMessages(data as Message[]);
+      if (messageData) {
+        setMessages(
+          messageData.map((msg: any) => ({
+            ...msg,
+            sender: msg.sender?.[0] ?? { username: 'Unknown' }
+          }))
+        );
       }
 
-      const { data: artworkData } = await supabase
+      // Get artwork
+      const { data: art } = await supabase
         .from('artworks')
         .select('title, image_url')
         .eq('id', artworkId)
         .single();
 
-      setArtwork(artworkData);
+      if (art) setArtwork(art);
+
+      // Get other user's name
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', otherUserId)
+        .single();
+
+      if (userProfile?.username) setOtherUsername(userProfile.username);
     };
 
-    if (artworkId && otherUserId) {
-      fetchData();
-    }
+    load();
   }, [artworkId, otherUserId]);
 
   const handleSend = async () => {
@@ -75,13 +90,14 @@ export default function MessageThread() {
         artwork_id: artworkId,
         sender_id: userId,
         receiver_id: otherUserId,
-        content,
-      },
+        content
+      }
     ]);
 
     if (!error) {
       setContent('');
-      const { data } = await supabase
+      // Re-fetch
+      const { data: updatedMessages } = await supabase
         .from('messages')
         .select(`
           id,
@@ -89,57 +105,52 @@ export default function MessageThread() {
           created_at,
           sender_id,
           receiver_id,
-          artwork_id,
-          sender:sender_id (username),
-          receiver:receiver_id (username),
-          artworks (title, image_url)
+          sender:sender_id (username)
         `)
-        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
         .eq('artwork_id', artworkId)
-        .order('created_at', { ascending: true });
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .order('created_at');
 
-      setMessages(data as Message[]);
+      if (updatedMessages) {
+        setMessages(
+          updatedMessages.map((msg: any) => ({
+            ...msg,
+            sender: msg.sender?.[0] ?? { username: 'Unknown' }
+          }))
+        );
+      }
     }
   };
 
   return (
     <>
       <Navbar />
-      <div className="max-w-2xl mx-auto p-4 text-black bg-white min-h-screen">
-        {artwork && (
-          <div className="mb-6">
-            <img
-              src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${artwork.image_url}`}
-              alt={artwork.title}
-              className="w-full rounded mb-2"
-            />
-            <h2 className="text-xl font-semibold">{artwork.title}</h2>
-          </div>
+      <div className="max-w-3xl mx-auto p-6 text-black bg-white min-h-screen">
+        <h1 className="text-2xl font-bold mb-2">
+          Chat about: <em>{artwork?.title ?? 'Untitled'}</em>
+        </h1>
+        <p className="text-sm mb-4 text-gray-500">Talking with: <strong>{otherUsername}</strong></p>
+
+        {artwork?.image_url && (
+          <img src={artwork.image_url} alt={artwork.title} className="w-full max-h-60 object-cover rounded mb-4" />
         )}
 
         <div className="space-y-3 mb-4">
-          {messages.map((msg) => {
-            const isSender = msg.sender_id === userId;
-            return (
-              <div
-                key={msg.id}
-                className={`p-3 rounded max-w-[70%] ${
-                  isSender
-                    ? 'ml-auto bg-gray-200 text-right'
-                    : 'mr-auto bg-blue-100 text-left'
-                }`}
-              >
-                <p className="text-sm mb-1">{msg.content}</p>
-                <p className="text-xs text-gray-500">
-                  {msg.sender?.[0]?.username ?? 'Unknown'}
-                  {new Date(msg.created_at).toLocaleTimeString()}
-                </p>
-              </div>
-            );
-          })}
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`p-3 rounded max-w-[80%] ${
+                msg.sender_id === userId ? 'bg-blue-100 ml-auto text-right' : 'bg-gray-200'
+              }`}
+            >
+              <p className="text-sm font-semibold">{msg.sender?.username ?? 'Unknown'}</p>
+              <p className="text-sm">{msg.content}</p>
+              <p className="text-xs text-gray-500">{new Date(msg.created_at).toLocaleString()}</p>
+            </div>
+          ))}
         </div>
 
-        <div className="flex gap-2 mt-6">
+        <div className="flex gap-2 mt-4">
           <input
             type="text"
             value={content}
