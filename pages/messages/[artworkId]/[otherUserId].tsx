@@ -66,7 +66,10 @@ export default function MessageThread() {
       if (messageData) {
         const typedMessages = (messageData as SupabaseMessage[]).map((msg) => ({
           ...msg,
-          sender: msg.sender[0] ?? { username: 'Unknown' },
+          sender: msg.sender && Array.isArray(msg.sender) && msg.sender[0]
+  ? msg.sender[0]
+  : { username: 'Unknown' },
+
         }));
         setMessages(typedMessages);
       }
