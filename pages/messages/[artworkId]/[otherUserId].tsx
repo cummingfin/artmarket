@@ -131,7 +131,11 @@ export default function MessageThread() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold">{artwork.title}</h1>
             <img
-              src={artwork.image_url}
+              src={
+                artwork.image_url.startsWith('http')
+                  ? artwork.image_url
+                  : `https://pvznxixryfutzkikmlli.supabase.co/storage/v1/object/public/artwork/${artwork.image_url}`
+              }
               alt={artwork.title}
               className="w-full max-h-64 object-cover rounded mt-2"
             />
