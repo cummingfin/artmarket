@@ -9,7 +9,7 @@ type Message = {
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  sender: { username: string }[];
+  senderUsername?: string;
 };
 
 type Artwork = {
@@ -26,43 +26,42 @@ export default function MessageThread() {
   const [content, setContent] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
 
-
   useEffect(() => {
     const fetchData = async () => {
       const sessionRes = await supabase.auth.getSession();
       const currentUserId = sessionRes.data.session?.user.id || null;
       setUserId(currentUserId);
 
-      console.debug('[DEBUG] Current user ID:', currentUserId);
-      console.debug('[DEBUG] Route params:', { artworkId, otherUserId });
+      if (!artworkId || !otherUserId || !currentUserId) return;
 
-      if (!artworkId || !otherUserId || !currentUserId) {
-        console.warn('[DEBUG] Missing IDs', { artworkId, otherUserId, currentUserId });
-        return;
-      }
-
-      // Fetch messages
+      // 1. Fetch messages
       const { data: msgData, error: msgError } = await supabase
         .from('messages')
-        .select(`
-          id,
-          content,
-          created_at,
-          sender_id,
-          receiver_id,
-          sender:sender_id (username)
-        `)
+        .select('*')
         .or(`and(artwork_id.eq.${artworkId},sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(artwork_id.eq.${artworkId},sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`)
         .order('created_at', { ascending: true });
 
-      if (msgError) {
-        console.error('[DEBUG] Error fetching messages:', msgError.message);
-      } else {
-        console.debug('[DEBUG] Raw message data:', msgData);
-        setMessages(msgData as Message[]);
+      if (msgError || !msgData) {
+        console.error('[DEBUG] Error fetching messages:', msgError?.message);
+        return;
       }
 
-      // Fetch artwork
+      // 2. Fetch usernames
+      const userIds = Array.from(new Set(msgData.flatMap(m => [m.sender_id, m.receiver_id])));
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .in('id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p.username]));
+      const enrichedMessages: Message[] = msgData.map((msg) => ({
+        ...msg,
+        senderUsername: profileMap.get(msg.sender_id) ?? 'Unknown',
+      }));
+
+      setMessages(enrichedMessages);
+
+      // 3. Fetch artwork
       const { data: artworkData, error: artworkError } = await supabase
         .from('artworks')
         .select('title, image_url')
@@ -72,7 +71,6 @@ export default function MessageThread() {
       if (artworkError) {
         console.error('[DEBUG] Error fetching artwork:', artworkError.message);
       } else {
-        console.debug('[DEBUG] Artwork info:', artworkData);
         setArtwork(artworkData);
       }
     };
@@ -99,25 +97,30 @@ export default function MessageThread() {
 
     setContent('');
 
-    // Refresh messages
-    const { data: newMessages, error: refreshError } = await supabase
-      .from('messages')
-      .select(`
-        id,
-        content,
-        created_at,
-        sender_id,
-        receiver_id,
-        sender:sender_id (username)
-      `)
-      .or(`and(artwork_id.eq.${artworkId},sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(artwork_id.eq.${artworkId},sender_id.eq.${otherUserId},receiver_id.eq.${userId})`)
-      .order('created_at', { ascending: true });
+    // Trigger a refetch
+    const fetchData = async () => {
+      const { data: msgData } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(artwork_id.eq.${artworkId},sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(artwork_id.eq.${artworkId},sender_id.eq.${otherUserId},receiver_id.eq.${userId})`)
+        .order('created_at', { ascending: true });
 
-    if (refreshError) {
-      console.error('[DEBUG] Error refreshing messages:', refreshError.message);
-    } else {
-      setMessages(newMessages as Message[]);
-    }
+      const userIds = Array.from(new Set(msgData?.flatMap(m => [m.sender_id, m.receiver_id])));
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .in('id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p.username]));
+      const enrichedMessages: Message[] = msgData?.map((msg) => ({
+        ...msg,
+        senderUsername: profileMap.get(msg.sender_id) ?? 'Unknown',
+      })) ?? [];
+
+      setMessages(enrichedMessages);
+    };
+
+    fetchData();
   };
 
   return (
@@ -146,8 +149,7 @@ export default function MessageThread() {
               }`}
             >
               <p className="text-sm mb-1 font-semibold">
-              {msg.sender?.[0]?.username || 'Unknown'}
-
+                {msg.senderUsername}
               </p>
               <p>{msg.content}</p>
               <p className="text-xs text-gray-500 mt-1">

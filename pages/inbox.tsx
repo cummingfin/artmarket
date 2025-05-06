@@ -12,16 +12,24 @@ type Thread = {
   buyer_username: string;
 };
 
-type SupabaseMessageRow = {
+type RawMessage = {
   id: string;
   content: string;
   created_at: string;
   sender_id: string;
   receiver_id: string;
   artwork_id: string;
-  artworks?: { title: string; artist_id: string }[];
-  sender?: { username: string }[];
-  receiver?: { username: string }[];
+};
+
+type Artwork = {
+  id: string;
+  title: string;
+  artist_id: string;
+};
+
+type Profile = {
+  id: string;
+  username: string;
 };
 
 export default function Inbox() {
@@ -38,51 +46,66 @@ export default function Inbox() {
 
       if (!user) return;
 
-      const { data, error } = await supabase
+      // 1. Fetch all messages
+      const { data: messageData, error: messageError } = await supabase
         .from('messages')
-        .select(`
-          id,
-          content,
-          created_at,
-          sender_id,
-          receiver_id,
-          artwork_id,
-          artworks ( title, artist_id ),
-          sender:sender_id ( username ),
-          receiver:receiver_id ( username )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Failed to load messages:', error.message);
+      if (messageError || !messageData) {
+        console.error('Failed to load messages:', messageError?.message);
+        setLoading(false);
         return;
       }
 
-      const filtered = (data as unknown as SupabaseMessageRow[]).filter((msg) => {
-        const artistId = msg.artworks?.[0]?.artist_id;
-        return msg.sender_id === user.id || artistId === user.id;
+      // 2. Fetch all artworks involved
+      const artworkIds = Array.from(new Set(messageData.map(m => m.artwork_id)));
+      const { data: artworks } = await supabase
+        .from('artworks')
+        .select('id, title, artist_id')
+        .in('id', artworkIds);
+
+      const artworkMap = new Map(artworks?.map(a => [a.id, a]) ?? []);
+
+      // 3. Filter messages relevant to user (as sender or artist)
+      const relevantMessages = messageData.filter(msg => {
+        const artwork = artworkMap.get(msg.artwork_id);
+        return msg.sender_id === user.id || artwork?.artist_id === user.id;
       });
 
-      const map = new Map<string, Thread>();
+      // 4. Collect unique user IDs for profile lookup
+      const userIds = Array.from(
+        new Set(relevantMessages.flatMap(m => [m.sender_id, m.receiver_id]))
+      );
 
-      filtered.forEach((msg) => {
-        const key = `${msg.artwork_id}_${msg.sender_id === user.id ? msg.receiver_id : msg.sender_id}`;
-        if (!map.has(key)) {
-          map.set(key, {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .in('id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p.username]) ?? []);
+
+      // 5. Group messages into threads
+      const threadMap = new Map<string, Thread>();
+
+      for (const msg of relevantMessages) {
+        const artwork = artworkMap.get(msg.artwork_id);
+        const otherUserId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+        const key = `${msg.artwork_id}_${otherUserId}`;
+
+        if (!threadMap.has(key)) {
+          threadMap.set(key, {
             artwork_id: msg.artwork_id,
-            buyer_id: msg.sender_id === user.id ? msg.receiver_id : msg.sender_id,
+            buyer_id: otherUserId,
             latest_message: msg.content,
             updated_at: msg.created_at,
-            artwork_title: msg.artworks?.[0]?.title ?? 'Untitled',
-            buyer_username:
-              msg.sender_id === user.id
-                ? msg.receiver?.[0]?.username ?? 'Unknown'
-                : msg.sender?.[0]?.username ?? 'Unknown',
+            artwork_title: artwork?.title ?? 'Untitled',
+            buyer_username: profileMap.get(otherUserId) ?? 'Unknown',
           });
         }
-      });
+      }
 
-      setThreads(Array.from(map.values()));
+      setThreads(Array.from(threadMap.values()));
       setLoading(false);
     };
 
@@ -103,10 +126,10 @@ export default function Inbox() {
           <div className="space-y-4">
             {threads.map((thread) => (
               <Link
-              key={`${thread.artwork_id}_${thread.buyer_id}`}
-              href={`/messages/${thread.artwork_id}/${thread.buyer_id}`}
-              className="block border rounded-lg p-4 hover:shadow transition"
-                >
+                key={`${thread.artwork_id}_${thread.buyer_id}`}
+                href={`/messages/${thread.artwork_id}/${thread.buyer_id}`}
+                className="block border rounded-lg p-4 hover:shadow transition"
+              >
                 <h2 className="font-semibold text-lg mb-1">{thread.artwork_title}</h2>
                 <p className="text-sm text-gray-600">
                   with <span className="font-medium">{thread.buyer_username}</span>
