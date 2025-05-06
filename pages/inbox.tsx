@@ -1,4 +1,3 @@
-// pages/inbox.tsx
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
@@ -6,11 +5,11 @@ import Link from 'next/link';
 
 type Thread = {
   artwork_id: string;
-  other_user_id: string;
+  buyer_id: string;
   latest_message: string;
   updated_at: string;
   artwork_title: string;
-  other_username: string;
+  buyer_username: string;
 };
 
 type SupabaseMessageRow = {
@@ -20,9 +19,9 @@ type SupabaseMessageRow = {
   sender_id: string;
   receiver_id: string;
   artwork_id: string;
-  artworks: { title: string; artist_id: string }[];
-  sender: { username: string }[];
-  receiver: { username: string }[];
+  artworks?: { title: string; artist_id: string }[];
+  sender?: { username: string }[];
+  receiver?: { username: string }[];
 };
 
 export default function Inbox() {
@@ -36,6 +35,7 @@ export default function Inbox() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (!user) return;
 
       const { data, error } = await supabase
@@ -48,8 +48,8 @@ export default function Inbox() {
           receiver_id,
           artwork_id,
           artworks ( title, artist_id ),
-          sender:profiles!messages_sender_id_fkey ( username ),
-          receiver:profiles!messages_receiver_id_fkey ( username )
+          sender:sender_id ( username ),
+          receiver:receiver_id ( username )
         `)
         .order('created_at', { ascending: false });
 
@@ -58,26 +58,23 @@ export default function Inbox() {
         return;
       }
 
-      const filtered = (data as SupabaseMessageRow[]).filter((msg) => {
-        return (
-          msg.sender_id === user.id ||
-          msg.receiver_id === user.id ||
-          msg.artworks?.[0]?.artist_id === user.id
-        );
+      const filtered = (data as unknown as SupabaseMessageRow[]).filter((msg) => {
+        const artistId = msg.artworks?.[0]?.artist_id;
+        return msg.sender_id === user.id || artistId === user.id;
       });
 
       const map = new Map<string, Thread>();
+
       filtered.forEach((msg) => {
-        const otherUserId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-        const key = `${msg.artwork_id}_${otherUserId}`;
+        const key = `${msg.artwork_id}_${msg.sender_id === user.id ? msg.receiver_id : msg.sender_id}`;
         if (!map.has(key)) {
           map.set(key, {
             artwork_id: msg.artwork_id,
-            other_user_id: otherUserId,
+            buyer_id: msg.sender_id === user.id ? msg.receiver_id : msg.sender_id,
             latest_message: msg.content,
             updated_at: msg.created_at,
             artwork_title: msg.artworks?.[0]?.title ?? 'Untitled',
-            other_username:
+            buyer_username:
               msg.sender_id === user.id
                 ? msg.receiver?.[0]?.username ?? 'Unknown'
                 : msg.sender?.[0]?.username ?? 'Unknown',
@@ -106,13 +103,13 @@ export default function Inbox() {
           <div className="space-y-4">
             {threads.map((thread) => (
               <Link
-                key={`${thread.artwork_id}_${thread.other_user_id}`}
-                href={`/messages/${thread.artwork_id}/${thread.other_user_id}`}
+                key={`${thread.artwork_id}_${thread.buyer_id}`}
+                href={`/messages/${thread.artwork_id}/${thread.buyer_id}`}
                 className="block border rounded-lg p-4 hover:shadow transition"
               >
                 <h2 className="font-semibold text-lg mb-1">{thread.artwork_title}</h2>
                 <p className="text-sm text-gray-600">
-                  with <span className="font-medium">{thread.other_username}</span>
+                  with <span className="font-medium">{thread.buyer_username}</span>
                 </p>
                 <p className="text-sm mt-1 text-gray-700 truncate">{thread.latest_message}</p>
               </Link>
