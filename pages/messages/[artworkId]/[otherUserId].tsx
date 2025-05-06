@@ -9,8 +9,11 @@ type Message = {
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  sender: { username: string }[]; // ← array
+  sender?: { username: string }[];   // ✅ make it an array
+  receiver?: { username: string }[];
+  artworks?: { title: string; image_url: string }[];
 };
+
 
 type ArtworkInfo = {
   title: string;
@@ -86,7 +89,10 @@ export default function MessageThread() {
           created_at,
           sender_id,
           receiver_id,
-          sender:sender_id (username)
+          artwork_id,
+          sender:sender_id (username),
+          receiver:receiver_id (username),
+          artworks (title, image_url)
         `)
         .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
         .eq('artwork_id', artworkId)
@@ -125,7 +131,7 @@ export default function MessageThread() {
               >
                 <p className="text-sm mb-1">{msg.content}</p>
                 <p className="text-xs text-gray-500">
-                  {msg.sender?.[0]?.username ?? 'Unknown'} •{' '}
+                  {msg.sender?.[0]?.username ?? 'Unknown'}
                   {new Date(msg.created_at).toLocaleTimeString()}
                 </p>
               </div>
