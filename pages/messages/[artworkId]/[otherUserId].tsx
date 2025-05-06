@@ -66,7 +66,8 @@ export default function MessageThread() {
       }
 
       console.log('[DEBUG] Raw message data:', messageData);
-      setMessages(messageData as any); // We keep `any` for now to log the full shape
+      setMessages(messageData as Message[]);
+
 
       console.log('[DEBUG] Fetching artwork...');
       const { data: artworkData, error: artworkError } = await supabase
@@ -126,7 +127,7 @@ export default function MessageThread() {
         console.error('[DEBUG] Message refetch error:', updatedError);
       } else {
         console.log('[DEBUG] Updated message data:', updatedMessages);
-        setMessages(updatedMessages as any);
+        setMessages(updatedMessages as Message[]);
       }
     }
   };
