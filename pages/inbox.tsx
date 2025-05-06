@@ -13,17 +13,16 @@ type Thread = {
 };
 
 type SupabaseMessageRow = {
-    id: string;
-    message: string;
-    created_at: string;
-    receiver_id: string;
-    sender_id: string;
-    artwork_id: string;
-    receiver?: { username: string }; // ✅ Not array
-    sender?: { username: string };   // ✅ Not array
-    artworks?: { title: string; artist_id: string }; // ✅ Not array
-  };
-  
+  id: string;
+  content: string;
+  created_at: string;
+  sender_id: string;
+  receiver_id: string;
+  artwork_id: string;
+  artworks?: { title: string; artist_id: string }[];
+  sender?: { username: string }[];
+  receiver?: { username: string }[];
+};
 
 export default function Inbox() {
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -32,21 +31,25 @@ export default function Inbox() {
   useEffect(() => {
     const loadInbox = async () => {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) return;
 
       const { data, error } = await supabase
         .from('messages')
         .select(`
           id,
-          message,
+          content,
           created_at,
-          receiver_id,
           sender_id,
+          receiver_id,
           artwork_id,
-          receiver:profiles!messages_receiver_id_fkey (username),
-          sender:profiles!messages_sender_id_fkey (username),
-          artworks ( title, artist_id )
+          artworks ( title, artist_id ),
+          sender:sender_id ( username ),
+          receiver:receiver_id ( username )
         `)
         .order('created_at', { ascending: false });
 
@@ -56,27 +59,25 @@ export default function Inbox() {
       }
 
       const filtered = (data as unknown as SupabaseMessageRow[]).filter((msg) => {
-        return (
-          msg.sender_id === user.id ||
-          msg.receiver_id === user.id ||
-          msg.artworks?.artist_id === user.id
-        );
+        const artistId = msg.artworks?.[0]?.artist_id;
+        return msg.sender_id === user.id || artistId === user.id;
       });
 
       const map = new Map<string, Thread>();
+
       filtered.forEach((msg) => {
         const key = `${msg.artwork_id}_${msg.sender_id === user.id ? msg.receiver_id : msg.sender_id}`;
         if (!map.has(key)) {
           map.set(key, {
             artwork_id: msg.artwork_id,
             buyer_id: msg.sender_id === user.id ? msg.receiver_id : msg.sender_id,
-            latest_message: msg.message,
+            latest_message: msg.content,
             updated_at: msg.created_at,
-            artwork_title: msg.artworks?.title ?? 'Untitled',
-                buyer_username:
-                msg.sender_id === user.id
-                    ? msg.receiver?.username ?? 'Unknown'
-                    : msg.sender?.username ?? 'Unknown',
+            artwork_title: msg.artworks?.[0]?.title ?? 'Untitled',
+            buyer_username:
+              msg.sender_id === user.id
+                ? msg.receiver?.[0]?.username ?? 'Unknown'
+                : msg.sender?.[0]?.username ?? 'Unknown',
           });
         }
       });
