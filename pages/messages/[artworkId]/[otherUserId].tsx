@@ -4,26 +4,13 @@ import { useRouter } from 'next/router';
 import { supabase } from '@/lib/supabaseClient';
 import Navbar from '@/components/Navbar';
 
-type Profile = {
-  username: string;
-};
-
 type Message = {
   id: string;
   content: string;
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  sender: Profile;
-};
-
-type SupabaseMessage = {
-  id: string;
-  content: string;
-  created_at: string;
-  sender_id: string;
-  receiver_id: string;
-  sender: Profile[]; // Supabase returns joined results as arrays
+  sender: { username: string }[];
 };
 
 type Artwork = {
@@ -39,17 +26,27 @@ export default function MessageThread() {
   const [content, setContent] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [artwork, setArtwork] = useState<Artwork | null>(null);
-  const [otherUsername, setOtherUsername] = useState<string>('User');
 
   useEffect(() => {
-    const load = async () => {
-      const { data: session } = await supabase.auth.getSession();
-      const currentUser = session.session?.user.id;
-      setUserId(currentUser || null);
+    const loadMessages = async () => {
+      console.log('[DEBUG] Fetching session...');
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('[DEBUG] Session fetch error:', sessionError);
+        return;
+      }
 
-      if (!artworkId || !otherUserId || !currentUser) return;
+      const currentUserId = sessionData.session?.user.id ?? null;
+      setUserId(currentUserId);
+      console.log('[DEBUG] Current user ID:', currentUserId);
 
-      const { data: messageData } = await supabase
+      if (!artworkId || !otherUserId || !currentUserId) {
+        console.warn('[DEBUG] Missing IDs', { artworkId, otherUserId, currentUserId });
+        return;
+      }
+
+      console.log('[DEBUG] Fetching messages...');
+      const { data: messageData, error: messageError } = await supabase
         .from('messages')
         .select(`
           id,
@@ -57,58 +54,61 @@ export default function MessageThread() {
           created_at,
           sender_id,
           receiver_id,
-          sender:sender_id (username)
+          sender:sender_id ( username )
         `)
+        .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
         .eq('artwork_id', artworkId)
-        .or(`sender_id.eq.${currentUser},receiver_id.eq.${currentUser}`)
-        .order('created_at');
+        .order('created_at', { ascending: true });
 
-      if (messageData) {
-        const typedMessages = (messageData as SupabaseMessage[]).map((msg) => ({
-          ...msg,
-          sender: msg.sender && Array.isArray(msg.sender) && msg.sender[0]
-  ? msg.sender[0]
-  : { username: 'Unknown' },
-
-        }));
-        setMessages(typedMessages);
+      if (messageError) {
+        console.error('[DEBUG] Message fetch error:', messageError);
+        return;
       }
 
-      const { data: art } = await supabase
+      console.log('[DEBUG] Raw message data:', messageData);
+      setMessages(messageData as any); // We keep `any` for now to log the full shape
+
+      console.log('[DEBUG] Fetching artwork...');
+      const { data: artworkData, error: artworkError } = await supabase
         .from('artworks')
         .select('title, image_url')
         .eq('id', artworkId)
         .single();
 
-      if (art) setArtwork(art);
+      if (artworkError) {
+        console.error('[DEBUG] Artwork fetch error:', artworkError);
+        return;
+      }
 
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', otherUserId)
-        .single();
-
-      if (userProfile?.username) setOtherUsername(userProfile.username);
+      console.log('[DEBUG] Artwork info:', artworkData);
+      setArtwork(artworkData);
     };
 
-    load();
+    loadMessages();
   }, [artworkId, otherUserId]);
 
   const handleSend = async () => {
     if (!userId || !content.trim()) return;
 
-    const { error } = await supabase.from('messages').insert([
-      {
-        artwork_id: artworkId,
-        sender_id: userId,
-        receiver_id: otherUserId,
-        content,
-      },
-    ]);
+    console.log('[DEBUG] Sending message...');
+    const messagePayload = {
+      artwork_id: artworkId,
+      sender_id: userId,
+      receiver_id: otherUserId,
+      content,
+    };
 
-    if (!error) {
+    console.log('[DEBUG] Message payload:', messagePayload);
+
+    const { error } = await supabase.from('messages').insert([messagePayload]);
+
+    if (error) {
+      console.error('[DEBUG] Message insert error:', error);
+    } else {
+      console.log('[DEBUG] Message sent successfully');
       setContent('');
-      const { data: updatedMessages } = await supabase
+      // Refetch messages
+      const { data: updatedMessages, error: updatedError } = await supabase
         .from('messages')
         .select(`
           id,
@@ -116,18 +116,17 @@ export default function MessageThread() {
           created_at,
           sender_id,
           receiver_id,
-          sender:sender_id (username)
+          sender:sender_id ( username )
         `)
-        .eq('artwork_id', artworkId)
         .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-        .order('created_at');
+        .eq('artwork_id', artworkId)
+        .order('created_at', { ascending: true });
 
-      if (updatedMessages) {
-        const typedMessages = (updatedMessages as SupabaseMessage[]).map((msg) => ({
-          ...msg,
-          sender: msg.sender[0] ?? { username: 'Unknown' },
-        }));
-        setMessages(typedMessages);
+      if (updatedError) {
+        console.error('[DEBUG] Message refetch error:', updatedError);
+      } else {
+        console.log('[DEBUG] Updated message data:', updatedMessages);
+        setMessages(updatedMessages as any);
       }
     }
   };
@@ -135,38 +134,43 @@ export default function MessageThread() {
   return (
     <>
       <Navbar />
-      <div className="max-w-3xl mx-auto p-6 text-black bg-white min-h-screen">
-        <h1 className="text-2xl font-bold mb-2">
-          Chat about: <em>{artwork?.title ?? 'Untitled'}</em>
+      <div className="max-w-2xl mx-auto p-4 text-black bg-white min-h-screen">
+        <h1 className="text-xl font-bold mb-4">
+          Chat about: <i>{artwork?.title ?? 'Untitled'}</i>
         </h1>
-        <p className="text-sm mb-4 text-gray-500">
-          Talking with: <strong>{otherUsername}</strong>
+        <p className="text-sm text-gray-600 mb-2">
+          Talking with: <b>{messages.length > 0 ? messages[0]?.sender?.[0]?.username ?? 'Unknown' : 'Loading...'}</b>
         </p>
-
         {artwork?.image_url && (
           <img
             src={artwork.image_url}
             alt={artwork.title}
-            className="w-full max-h-60 object-cover rounded mb-4"
+            className="w-full max-h-64 object-contain rounded mb-4"
           />
         )}
 
         <div className="space-y-3 mb-4">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`p-3 rounded max-w-[80%] ${
-                msg.sender_id === userId ? 'bg-blue-100 ml-auto text-right' : 'bg-gray-200'
-              }`}
-            >
-              <p className="text-sm font-semibold">{msg.sender.username}</p>
-              <p className="text-sm">{msg.content}</p>
-              <p className="text-xs text-gray-500">{new Date(msg.created_at).toLocaleString()}</p>
-            </div>
-          ))}
+          {messages.map((msg) => {
+            const isMe = msg.sender_id === userId;
+            const username = msg.sender?.[0]?.username ?? 'Unknown';
+            return (
+              <div
+                key={msg.id}
+                className={`p-3 rounded-md max-w-xs ${
+                  isMe ? 'bg-blue-100 ml-auto text-right' : 'bg-gray-200'
+                }`}
+              >
+                <p className="text-xs font-semibold mb-1">{username}</p>
+                <p className="text-sm">{msg.content}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(msg.created_at).toLocaleString()}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-2">
           <input
             type="text"
             value={content}
@@ -176,7 +180,7 @@ export default function MessageThread() {
           />
           <button
             onClick={handleSend}
-            className="bg-black text-white px-4 py-2 rounded"
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
           >
             Send
           </button>
