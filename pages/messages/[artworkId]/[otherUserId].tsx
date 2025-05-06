@@ -9,10 +9,12 @@ type Message = {
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  artwork_id: string;
-  artworks?: { title: string }[];
-  sender?: { username: string }[];
-  receiver?: { username: string }[];
+  sender: { username: string }[]; // ← array
+};
+
+type ArtworkInfo = {
+  title: string;
+  image_url: string;
 };
 
 export default function MessageThread() {
@@ -22,11 +24,10 @@ export default function MessageThread() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
-  const [artworkTitle, setArtworkTitle] = useState('');
-  const [otherUsername, setOtherUsername] = useState('');
+  const [artwork, setArtwork] = useState<ArtworkInfo | null>(null);
 
   useEffect(() => {
-    const fetchMessages = async () => {
+    const fetchData = async () => {
       const { data: session } = await supabase.auth.getSession();
       const currentUser = session.session?.user.id;
       setUserId(currentUser || null);
@@ -39,35 +40,27 @@ export default function MessageThread() {
           created_at,
           sender_id,
           receiver_id,
-          artwork_id,
-          artworks ( title ),
-          sender:sender_id ( username ),
-          receiver:receiver_id ( username )
+          sender:sender_id (username)
         `)
-        .eq('artwork_id', artworkId)
         .or(`sender_id.eq.${currentUser},receiver_id.eq.${currentUser}`)
+        .eq('artwork_id', artworkId)
         .order('created_at', { ascending: true });
 
-      if (!error && data) {
+      if (!error) {
         setMessages(data as Message[]);
-
-        // Set artwork title
-        setArtworkTitle(data[0]?.artworks?.[0]?.title ?? 'Untitled');
-
-        // Determine other user's username
-        const otherUser =
-          data[0].sender_id === currentUser
-            ? data[0].receiver?.[0]?.username
-            : data[0].sender?.[0]?.username;
-
-        setOtherUsername(otherUser ?? 'User');
-      } else {
-        console.error('Failed to load messages:', error?.message);
       }
+
+      const { data: artworkData } = await supabase
+        .from('artworks')
+        .select('title, image_url')
+        .eq('id', artworkId)
+        .single();
+
+      setArtwork(artworkData);
     };
 
     if (artworkId && otherUserId) {
-      fetchMessages();
+      fetchData();
     }
   }, [artworkId, otherUserId]);
 
@@ -83,58 +76,61 @@ export default function MessageThread() {
       },
     ]);
 
-    if (error) {
-      console.error('Error sending message:', error.message);
-      return;
+    if (!error) {
+      setContent('');
+      const { data } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          content,
+          created_at,
+          sender_id,
+          receiver_id,
+          sender:sender_id (username)
+        `)
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .eq('artwork_id', artworkId)
+        .order('created_at', { ascending: true });
+
+      setMessages(data as Message[]);
     }
-
-    setContent('');
-
-    // Re-fetch messages
-    const { data } = await supabase
-      .from('messages')
-      .select(`
-        id,
-        content,
-        created_at,
-        sender_id,
-        receiver_id,
-        artwork_id,
-        sender:sender_id ( username )
-      `)
-      .eq('artwork_id', artworkId)
-      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-      .order('created_at', { ascending: true });
-
-    setMessages(data as Message[]);
   };
 
   return (
     <>
       <Navbar />
       <div className="max-w-2xl mx-auto p-4 text-black bg-white min-h-screen">
-        <h1 className="text-xl font-bold mb-2">Chat about: <span className="italic">{artworkTitle}</span></h1>
-        <p className="text-sm text-gray-500 mb-4">Talking with: <strong>{otherUsername}</strong></p>
+        {artwork && (
+          <div className="mb-6">
+            <img
+              src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork/${artwork.image_url}`}
+              alt={artwork.title}
+              className="w-full rounded mb-2"
+            />
+            <h2 className="text-xl font-semibold">{artwork.title}</h2>
+          </div>
+        )}
 
         <div className="space-y-3 mb-4">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`max-w-[80%] px-4 py-2 rounded-lg ${
-                msg.sender_id === userId
-                  ? 'bg-gray-200 ml-auto text-right'
-                  : 'bg-blue-100 mr-auto text-left'
-              }`}
-            >
-              <p className="text-xs font-semibold mb-1">
-                {msg.sender?.[0]?.username ?? 'Unknown'}
-              </p>
-              <p className="text-sm">{msg.content}</p>
-              <p className="text-[10px] text-gray-500 mt-1">
-                {new Date(msg.created_at).toLocaleString()}
-              </p>
-            </div>
-          ))}
+          {messages.map((msg) => {
+            const isSender = msg.sender_id === userId;
+            return (
+              <div
+                key={msg.id}
+                className={`p-3 rounded max-w-[70%] ${
+                  isSender
+                    ? 'ml-auto bg-gray-200 text-right'
+                    : 'mr-auto bg-blue-100 text-left'
+                }`}
+              >
+                <p className="text-sm mb-1">{msg.content}</p>
+                <p className="text-xs text-gray-500">
+                  {msg.sender?.[0]?.username ?? 'Unknown'} •{' '}
+                  {new Date(msg.created_at).toLocaleTimeString()}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
         <div className="flex gap-2 mt-6">
@@ -147,7 +143,7 @@ export default function MessageThread() {
           />
           <button
             onClick={handleSend}
-            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+            className="bg-black text-white px-4 py-2 rounded"
           >
             Send
           </button>
