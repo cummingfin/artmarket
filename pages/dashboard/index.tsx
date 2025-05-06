@@ -12,6 +12,8 @@ export default function Dashboard() {
   const [shippingCost, setShippingCost] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [croppedFile, setCroppedFile] = useState<File | null>(null);
+  const [croppedPreviewUrl, setCroppedPreviewUrl] = useState<string>('');
   const [message, setMessage] = useState('');
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,34 +28,69 @@ export default function Dashboard() {
     }
   };
 
+  const handleCroppedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setCroppedFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setCroppedPreviewUrl(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setCroppedPreviewUrl('');
+    }
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('');
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       setMessage('You must be logged in to submit artwork.');
       return;
     }
 
     if (!imageFile) {
-      setMessage('Please select an image file.');
+      setMessage('Please select the main image.');
       return;
     }
 
-    const fileExt = imageFile.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = fileName;
+    const timestamp = Date.now();
 
-    const { data: storageData, error: storageError } = await supabase.storage
+    // Upload main image
+    const mainExt = imageFile.name.split('.').pop();
+    const mainFileName = `${timestamp}.${mainExt}`;
+    const mainPath = mainFileName;
+
+    const { data: mainData, error: mainError } = await supabase.storage
       .from('artwork')
-      .upload(filePath, imageFile);
+      .upload(mainPath, imageFile);
 
-    if (storageError) {
-      setMessage(`Upload failed: ${storageError.message}`);
+    if (mainError) {
+      setMessage(`Main image upload failed: ${mainError.message}`);
       return;
     }
 
+    // Upload cropped image (optional)
+    let croppedPath = '';
+    if (croppedFile) {
+      const croppedExt = croppedFile.name.split('.').pop();
+      const croppedFileName = `${timestamp}_cropped.${croppedExt}`;
+      croppedPath = croppedFileName;
+
+      const { error: croppedError } = await supabase.storage
+        .from('artwork')
+        .upload(croppedPath, croppedFile);
+
+      if (croppedError) {
+        setMessage(`Cropped image upload failed: ${croppedError.message}`);
+        return;
+      }
+    }
+
+    // Insert into artworks table
     const { error: insertError } = await supabase.from('artworks').insert([
       {
         title,
@@ -63,7 +100,8 @@ export default function Dashboard() {
         style,
         width_cm: parseFloat(widthCm),
         height_cm: parseFloat(heightCm),
-        image_url: storageData?.path,
+        image_url: mainData?.path,
+        cropped_image_url: croppedPath || null,
         artist_id: user.id,
         sold: false,
       },
@@ -82,6 +120,8 @@ export default function Dashboard() {
       setHeightCm('');
       setImageFile(null);
       setPreviewUrl('');
+      setCroppedFile(null);
+      setCroppedPreviewUrl('');
     }
   };
 
@@ -156,6 +196,7 @@ export default function Dashboard() {
               <option value="other">Other</option>
             </select>
 
+            <label className="text-black block">Main Image:</label>
             <input
               className="border border-black p-2 w-full rounded text-black"
               type="file"
@@ -166,10 +207,29 @@ export default function Dashboard() {
 
             {previewUrl && (
               <div className="mt-4">
-                <p className="text-sm font-medium text-black mb-2">Preview:</p>
+                <p className="text-sm font-medium text-black mb-2">Main Image Preview:</p>
                 <img
                   src={previewUrl}
                   alt="Preview"
+                  className="rounded shadow-sm max-h-64 object-cover"
+                />
+              </div>
+            )}
+
+            <label className="text-black block mt-4">Cropped Image (optional):</label>
+            <input
+              className="border border-black p-2 w-full rounded text-black"
+              type="file"
+              accept="image/*"
+              onChange={handleCroppedChange}
+            />
+
+            {croppedPreviewUrl && (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-black mb-2">Cropped Image Preview:</p>
+                <img
+                  src={croppedPreviewUrl}
+                  alt="Cropped Preview"
                   className="rounded shadow-sm max-h-64 object-cover"
                 />
               </div>
