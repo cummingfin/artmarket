@@ -25,7 +25,7 @@ export default function MessageThread() {
   const [artwork, setArtwork] = useState<Artwork | null>(null);
   const [content, setContent] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,8 +75,6 @@ export default function MessageThread() {
         console.debug('[DEBUG] Artwork info:', artworkData);
         setArtwork(artworkData);
       }
-
-      setLoading(false);
     };
 
     fetchData();
