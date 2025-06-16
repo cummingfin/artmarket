@@ -206,7 +206,7 @@ export default function Dashboard() {
               <option value="">Select Display Type</option>
               <option value="paper">Paper</option>
               <option value="canvas">Canvas</option>
-              <option value="frame">Frame</option>
+              <option value="framed">Framed</option>
             </select>
 
             <label className="text-black block">Main Image:</label>
