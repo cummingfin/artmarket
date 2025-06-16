@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [widthCm, setWidthCm] = useState('');
   const [heightCm, setHeightCm] = useState('');
   const [shippingCost, setShippingCost] = useState('');
+  const [displayType, setDisplayType] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [croppedFile, setCroppedFile] = useState<File | null>(null);
@@ -59,7 +60,6 @@ export default function Dashboard() {
 
     const timestamp = Date.now();
 
-    // Upload main image
     const mainExt = imageFile.name.split('.').pop();
     const mainFileName = `${timestamp}.${mainExt}`;
     const mainPath = mainFileName;
@@ -73,7 +73,6 @@ export default function Dashboard() {
       return;
     }
 
-    // Upload cropped image (optional)
     let croppedPath = '';
     if (croppedFile) {
       const croppedExt = croppedFile.name.split('.').pop();
@@ -90,7 +89,6 @@ export default function Dashboard() {
       }
     }
 
-    // Insert into artworks table
     const { error: insertError } = await supabase.from('artworks').insert([
       {
         title,
@@ -100,6 +98,7 @@ export default function Dashboard() {
         style,
         width_cm: parseFloat(widthCm),
         height_cm: parseFloat(heightCm),
+        display_type: displayType,
         image_url: mainData?.path,
         cropped_image_url: croppedPath || null,
         artist_id: user.id,
@@ -118,6 +117,7 @@ export default function Dashboard() {
       setStyle('');
       setWidthCm('');
       setHeightCm('');
+      setDisplayType('');
       setImageFile(null);
       setPreviewUrl('');
       setCroppedFile(null);
@@ -196,6 +196,19 @@ export default function Dashboard() {
               <option value="other">Other</option>
             </select>
 
+            {/* New display_type dropdown */}
+            <select
+              className="border border-black p-2 w-full rounded text-black"
+              value={displayType}
+              onChange={(e) => setDisplayType(e.target.value)}
+              required
+            >
+              <option value="">Select Display Type</option>
+              <option value="paper">Paper</option>
+              <option value="canvas">Canvas</option>
+              <option value="frame">Frame</option>
+            </select>
+
             <label className="text-black block">Main Image:</label>
             <input
               className="border border-black p-2 w-full rounded text-black"
@@ -249,3 +262,4 @@ export default function Dashboard() {
     </>
   );
 }
+
